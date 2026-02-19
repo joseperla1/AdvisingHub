@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
+import { StaffQueueManagementComponent } from './/staff-queue-management/staff-queue-management.component';
 
 export const routes: Routes = [
+<<<<<<< HEAD
 
   {
     path: 'user/dashboard',
@@ -36,4 +38,7 @@ export const routes: Routes = [
   // Wildcard fallback
   { path: '**', redirectTo: 'user/dashboard' }
 
+=======
+  { path: '', component: StaffQueueManagementComponent },
+>>>>>>> advisor queue manager dashboard
 ];
