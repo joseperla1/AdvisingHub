@@ -26,11 +26,11 @@
         <span>{{ formattedTime() }}</span>
       </div>
 
-            
+      <!-- Login / Logout  -->
       <div class="auth-section">
         <ng-container *ngIf="!isLoggedIn(); else loggedInBlock">
           <button class="ghost auth-btn" (click)="login()">
-            <span class="auth-icon" aria-hidden="true">🔐</span>
+            <span class="auth-icon" aria-hidden="true"></span>
             Log In
           </button>
         </ng-container>
@@ -45,10 +45,32 @@
           </div>
         </ng-template>
       </div>
+      <!-- Notification Button -->
+      <button class="ghost notif-btn" (click)="toggleNotifications()">
+        <span aria-hidden="true"></span>
+        Notifications
+        <span class="badge" *ngIf="unreadCount() > 0">{{ unreadCount() }}</span>
+      </button>
 
       <button class="ghost">Advisor Dashboard</button>
     </div>
   </header>
+
+  <!--  notifications (auto-dismiss) -->
+  <div class="toast-stack" aria-live="polite" aria-relevant="additions removals">
+    <div class="toast"
+         *ngFor="let t of toastList()"
+         [class.info]="t.type === 'info'"
+         [class.success]="t.type === 'success'"
+         [class.warning]="t.type === 'warning'">
+      <div class="toast-main">
+        <div class="toast-title">{{ t.title }}</div>
+        <div class="toast-msg" *ngIf="t.message">{{ t.message }}</div>
+        <div class="toast-time">{{ t.createdAt | date:'shortTime' }}</div>
+      </div>
+      <button class="toast-x" (click)="dismissToast(t.id)" aria-label="Dismiss notification">✕</button>
+    </div>
+  </div>
 
   <!-- Tabs bar -->
   <div class="tabs-wrap">
@@ -73,150 +95,245 @@
 
   <!-- Main content -->
   <main class="content">
+    <!-- Drawer backdrop -->
+<div class="drawer-backdrop"
+     *ngIf="isNotifOpen()"
+     (click)="closeNotifications()"
+     aria-hidden="true"></div>
 
+<!-- Slide-in Notification Center -->
+<aside class="drawer" [class.open]="isNotifOpen()" role="dialog" aria-label="Notification Center">
+  <div class="drawer-head">
+    <div>
+      <div class="drawer-title">Notification Center</div>
+      <div class="drawer-sub">Last 10 in-app notifications</div>
+    </div>
+
+    <div class="drawer-actions">
+      <button class="btn light compact" (click)="clearNotifications()">Clear</button>
+      <button class="ghost drawer-x" (click)="closeNotifications()" aria-label="Close notifications">✕</button>
+    </div>
+  </div>
+
+  <div class="drawer-body">
+    <div class="notify-list" *ngIf="notificationHistory().length > 0; else noNotices">
+      <div class="notice-row" *ngFor="let n of notificationHistory()">
+        <span class="notice-dot"
+              [class.info]="n.type==='info'"
+              [class.success]="n.type==='success'"
+              [class.warning]="n.type==='warning'"></span>
+
+        <div class="notice-text">
+          <div class="notice-line">
+            <span class="notice-ttl">{{ n.title }}</span>
+            <span class="notice-ts">{{ n.createdAt | date:'shortTime' }}</span>
+          </div>
+          <div class="notice-msg" *ngIf="n.message">{{ n.message }}</div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noNotices>
+      <div class="notify-empty">No notifications yet. Actions like “Serve Next” will appear here.</div>
+    </ng-template>
+  </div>
+</aside>
     <ng-container [ngSwitch]="activeTab()">
 
-      <!-- QUEUE MANAGEMENT TAB-->
+      <!--QUEUE MANAGER TAB-->
       <ng-container *ngSwitchCase="'queue'">
+        <div class="queue-layout">
+          <div class="queue-main-col">
+            <!-- Hero card -->
+            <section class="card hero">
+              <h1>Advisor Queue Manager</h1>
+              <p style="color: whitesmoke;">Manage the queue, serve students, and track progress</p>
+            </section>
 
-        <!-- Hero card -->
-        <section class="card hero">
-          <h1>Advisor Queue Manager</h1>
-          <p style="color: whitesmoke;">Manage the queue, serve students, and track progress</p>
-        </section>
+            <!-- Controls card -->
+            <section class="card controls">
+              <div class="controls-head">
+                <div class="controls-title">Queue Management Controls</div>
+                <div class="controls-actions">
+                  <button class="btn light" (click)="toggleQueue()">
+                    <span class="btn-icon" aria-hidden="true">⏸</span>
+                    {{ queueStatus() === 'Active' ? 'Pause Queue' : 'Resume Queue' }}
+                  </button>
 
-        <!-- Controls card -->
-        <section class="card controls">
-          <div class="controls-head">
-            <div class="controls-title">Queue Management Controls</div>
-            <div class="controls-actions">
-              <button class="btn light" (click)="toggleQueue()">
-                <span class="btn-icon" aria-hidden="true">⏸</span>
-                {{ queueStatus() === 'Active' ? 'Pause Queue' : 'Resume Queue' }}
-              </button>
-
-              <button class="btn dark" (click)="serveNext()">
-                <span class="btn-icon" aria-hidden="true">▶</span>
-                Serve Next
-              </button>
-            </div>
-          </div>
-
-          <div class="metrics">
-            <div class="metric">
-              <div class="m-icon blue" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="18" height="18">
-                  <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="currentColor"/>
-                  <path d="M4 20a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
-              <div class="m-label">Waiting</div>
-              <div class="m-value">{{ waitingCount() }}</div>
-            </div>
-
-            <div class="metric">
-              <div class="m-icon green" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="18" height="18">
-                  <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="currentColor"/>
-                  <path d="M6 21c.8-3.8 3.2-6 6-6s5.2 2.2 6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                  <path d="M18 8h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
-              <div class="m-label">Being Served</div>
-              <div class="m-value">{{ beingServedCount() }}</div>
-            </div>
-
-            <div class="metric">
-              <div class="m-icon purple" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="18" height="18">
-                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
-                  <path d="M8 12.5l2.2 2.2L16.5 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
-              <div class="m-label">Completed Today</div>
-              <div class="m-value">{{ completedTodayCount() }}</div>
-            </div>
-
-            <div class="metric">
-              <div class="m-icon orange" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="18" height="18">
-                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
-                  <path d="M12 7v6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                  <circle cx="12" cy="16.5" r="1" fill="currentColor"/>
-                </svg>
-              </div>
-              <div class="m-label">Queue Status</div>
-              <div class="m-value status">{{ queueStatus() }}</div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Current Queue -->
-        <section class="card">
-          <div class="section-title">Current Queue</div>
-
-          <div class="queue-list">
-          <div class="queue-card" *ngFor="let cur of queueList(); let i = index">
-            <div class="badge-num">{{ i + 1 }}</div>
-
-            <div class="queue-main">
-              <div class="queue-top">
-                <div class="q-name">
-                  <span class="name">{{ cur.name }}</span>
-                  <span class="tag">{{ cur.priority }}</span>
+                  <button class="btn dark" (click)="serveNext()">
+                    <span class="btn-icon" aria-hidden="true">▶</span>
+                    Serve Next
+                  </button>
                 </div>
               </div>
 
-              <div class="q-meta">ID: {{ cur.studentId }}</div>
-              <div class="q-reason">{{ cur.reason }}</div>
-              <div class="q-joined">{{ cur.joinedAgo }}</div>
+              <div class="metrics">
+                <div class="metric">
+                  <div class="m-icon blue" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18">
+                      <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="currentColor"/>
+                      <path d="M4 20a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="m-label">Waiting</div>
+                  <div class="m-value">{{ waitingCount() }}</div>
+                </div>
 
-              <a class="q-notes" *ngIf="cur.notes">{{ cur.notes }}</a>
-            </div>
+                <div class="metric">
+                  <div class="m-icon green" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18">
+                      <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="currentColor"/>
+                      <path d="M6 21c.8-3.8 3.2-6 6-6s5.2 2.2 6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                      <path d="M18 8h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="m-label">Being Served</div>
+                  <div class="m-value">{{ beingServedCount() }}</div>
+                </div>
 
-            <div class="queue-side">
-              <div class="wait">
-                <div class="wait-label">Est. Wait</div>
-                <div class="wait-value">{{ cur.estWaitMin }} min</div>
+                <div class="metric">
+                  <div class="m-icon purple" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18">
+                      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                      <path d="M8 12.5l2.2 2.2L16.5 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="m-label">Completed Today</div>
+                  <div class="m-value">{{ completedTodayCount() }}</div>
+                </div>
+
+                <div class="metric">
+                  <div class="m-icon orange" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18">
+                      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                      <path d="M12 7v6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                      <circle cx="12" cy="16.5" r="1" fill="currentColor"/>
+                    </svg>
+                  </div>
+                  <div class="m-label">Queue Status</div>
+                  <div class="m-value status">{{ queueStatus() }}</div>
+                </div>
               </div>
+            </section>
 
-              <div class="state-pill" [class.serving]="cur.state === 'Being Served'">
-                {{ cur.state }}
+            <!-- Current Queue -->
+            <section class="card">
+              <div class="section-title">Current Queue</div>
+
+              <div class="queue-list">
+                <div class="queue-card" *ngFor="let cur of queueList(); let i = index">
+                  <div class="badge-num">{{ i + 1 }}</div>
+
+                  <div class="queue-main">
+                    <div class="queue-top">
+                      <div class="q-name">
+                        <span class="name">{{ cur.name }}</span>
+                        <span class="tag">{{ cur.priority }}</span>
+                      </div>
+                    </div>
+
+                    <div class="q-meta">ID: {{ cur.studentId }}</div>
+                    <div class="q-reason">{{ cur.reason }}</div>
+                    <div class="q-joined">{{ cur.joinedAgo }}</div>
+
+                    <a class="q-notes" *ngIf="cur.notes">{{ cur.notes }}</a>
+                  </div>
+
+                  <div class="queue-side">
+                    <div class="wait">
+                      <div class="wait-label">Est. Wait</div>
+                      <div class="wait-value">{{ cur.estWaitMin }} min</div>
+                    </div>
+
+                    <div class="state-pill" [class.serving]="cur.state === 'Being Served'">
+                      {{ cur.state }}
+                    </div>
+                  </div>
+
+                  <div class="queue-actions">
+                    <button class="btn dark compact" (click)="completeById(cur.studentId)">✓&nbsp; Complete</button>
+                    <button class="btn light compact" (click)="noShowById(cur.studentId)">×&nbsp; No Show</button>
+                    <button class="btn light compact" (click)="manageById(cur.studentId)">Manage</button>
+                  </div>
+                </div>
+
+                <div class="empty-queue" *ngIf="queueList().length === 0">
+                  No students currently in the queue.
+                </div>
               </div>
-            </div>
+            </section>
 
-            <div class="queue-actions">
-              <!--  per-row actions -->
-              <button class="btn dark compact" (click)="completeById(cur.studentId)">✓&nbsp; Complete</button>
-              <button class="btn light compact" (click)="noShowById(cur.studentId)">×&nbsp; No Show</button>
-              <button class="btn light compact" (click)="manageById(cur.studentId)">Manage</button>
-            </div>
-          </div>
-
-          <div class="empty-queue" *ngIf="queueList().length === 0">
-            No students currently in the queue.
           </div>
         </div>
-
-        </section>
       </ng-container>
 
-
-      <!-- SERVICES TAB-->
+      <!-- SERVICES TAB -->
       <ng-container *ngSwitchCase="'services'">
         <app-services-management></app-services-management>
       </ng-container>
 
-
-      <!-- APPOINTMENTS TAB (placeholder) -->
+      <!-- APPOINTMENTS TAB -->
       <ng-container *ngSwitchCase="'appointments'">
-        <section class="card hero">
-          <h1>Appointments</h1>
-          <p style="color: whitesmoke;">Appointments UI coming soon...</p>
-        </section>
-      </ng-container>
+  <section class="card hero">
+    <h1>Appointments</h1>
+    <p style="color: whitesmoke;">View current appointments and their queue positions</p>
+  </section>
+
+  <section class="card">
+    <div class="section-title">Current Appointments</div>
+
+    <div class="appt-table">
+      <div class="appt-head">
+        <div>Student</div>
+        <div>Service</div>
+        <div>Time</div>
+        <div>Advisor</div>
+        <div>Queue</div>
+        <div>Status</div>
+      </div>
+
+      <div class="appt-row" *ngFor="let a of appointmentsView()">
+        <div class="appt-student">
+          <div class="appt-name">{{ a.studentName }}</div>
+          <div class="appt-id">ID: {{ a.studentId }}</div>
+        </div>
+
+        <div class="appt-service">{{ a.service }}</div>
+
+        <div class="appt-time">{{ a.startTime }}</div>
+
+        <div class="appt-advisor">{{ a.advisor }}</div>
+
+        <div class="appt-queue">
+          <span *ngIf="a.queuePosition !== null; else noQueue">
+            #{{ a.queuePosition }}
+          </span>
+          <ng-template #noQueue>—</ng-template>
+        </div>
+
+        <div class="appt-status">
+          <span class="pill-status"
+                [class.scheduled]="a.status==='Scheduled'"
+                [class.checked]="a.status==='Checked In'"
+                [class.inservice]="a.status==='In Service'"
+                [class.completed]="a.status==='Completed'"
+                [class.canceled]="a.status==='Canceled'">
+            {{ a.status }}
+          </span>
+        </div>
+
+        <div class="appt-notes" *ngIf="a.notes">
+          <span class="notes-label">Notes:</span> {{ a.notes }}
+        </div>
+      </div>
+
+      <div class="empty-queue" *ngIf="appointmentsView().length === 0">
+        No appointments scheduled.
+      </div>
+    </div>
+  </section>
+</ng-container>
 
     </ng-container>
-
   </main>
 </div>
