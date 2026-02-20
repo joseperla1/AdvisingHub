@@ -1,0 +1,110 @@
+<div class="services">
+
+  <div class="card header">
+    <div>
+      <div class="title">Service Management</div>
+      <div class="subtitle">Create and edit the services students can request.</div>
+    </div>
+
+    <button class="btn light" (click)="startCreate()">+ New Service</button>
+  </div>
+
+  <div class="grid">
+    <!-- Form -->
+    <section class="card form">
+      <div class="form-title">
+        {{ editingId() ? 'Edit Service' : 'Create Service' }}
+      </div>
+
+      <div class="field">
+        <label>Service Name <span class="req">*</span></label>
+        <input type="text"
+               [formControl]="nameCtrl"
+               maxlength="100"
+               placeholder="e.g., Transcript Request" />
+        <div class="hint">
+          <span *ngIf="nameCtrl.touched && nameCtrl.hasError('required')" class="err">Required.</span>
+          <span *ngIf="nameCtrl.touched && nameCtrl.hasError('maxlength')" class="err">Max 100 characters.</span>
+          <span class="count">{{ (nameCtrl.value?.length || 0) }}/100</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Description <span class="req">*</span></label>
+        <textarea rows="4"
+                  [formControl]="descCtrl"
+                  placeholder="Describe what this service covers..."></textarea>
+        <div class="hint">
+          <span *ngIf="descCtrl.touched && descCtrl.hasError('required')" class="err">Required.</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>Expected Duration (minutes) <span class="req">*</span></label>
+          <input type="number" min="1" step="1" [formControl]="durCtrl" placeholder="e.g., 10" />
+          <div class="hint">
+            <span *ngIf="durCtrl.touched && durCtrl.hasError('required')" class="err">Required.</span>
+            <span *ngIf="durCtrl.touched && durCtrl.hasError('min')" class="err">Must be at least 1.</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Priority Level <span class="req">*</span></label>
+          <select [formControl]="prioCtrl">
+            <option value="low">low</option>
+            <option value="medium">medium</option>
+            <option value="high">high</option>
+          </select>
+          <div class="hint">
+            <span *ngIf="prioCtrl.touched && prioCtrl.hasError('required')" class="err">Required.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn dark" (click)="save()">
+          {{ editingId() ? 'Save Changes' : 'Create Service' }}
+        </button>
+        <button class="btn light" (click)="cancel()">Cancel</button>
+      </div>
+    </section>
+
+    <!-- List -->
+    <section class="card list">
+      <div class="list-title">Existing Services</div>
+
+      <div class="table">
+        <div class="thead">
+          <div>Name</div>
+          <div>Duration</div>
+          <div>Priority</div>
+          <div class="right">Actions</div>
+        </div>
+
+        <div class="trow" *ngFor="let s of services()">
+          <div>
+            <div class="name">{{ s.name }}</div>
+            <div class="desc">{{ s.description }}</div>
+          </div>
+          <div class="muted">{{ s.expectedDurationMin }} min</div>
+          <div>
+            <span class="pill" [class.low]="s.priority==='low'" [class.medium]="s.priority==='medium'" [class.high]="s.priority==='high'">
+              {{ s.priority }}
+            </span>
+          </div>
+
+          <div class="right">
+            <button class="mini" (click)="startEdit(s)">Edit</button>
+            <button class="mini danger" (click)="delete(s.id)">Delete</button>
+          </div>
+        </div>
+
+        <div class="empty" *ngIf="services().length === 0">
+          No services yet. Click “New Service” to create one.
+        </div>
+      </div>
+    </section>
+  </div>
+
+</div>

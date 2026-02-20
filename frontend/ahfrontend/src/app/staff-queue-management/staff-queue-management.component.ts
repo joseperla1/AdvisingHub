@@ -1,5 +1,7 @@
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ServicesManagementComponent } from '../services-management/services-management.component';
+
 
 type QueueStatus = 'Active' | 'Paused';
 type ServiceState = 'Waiting' | 'Being Served' | 'Completed' | 'No Show';
@@ -18,7 +20,7 @@ interface QueueItem {
 @Component({
   selector: 'app-staff-queue-management',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ServicesManagementComponent],
   templateUrl: './staff-queue-management.component.html',
   styleUrls: ['./staff-queue-management.component.scss'],
 })
@@ -27,7 +29,7 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
   mode = signal<'Student' | 'Staff'>('Staff');
 
   // Tabs
-  activeTab = signal<'queue' | 'live' | 'appointments'>('queue');
+  activeTab = signal<'queue' | 'services' | 'appointments'>('queue');
 
   // Queue controls
   queueStatus = signal<QueueStatus>('Active');
@@ -72,12 +74,63 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
   beingServedCount = computed(() => this.items().filter(x => x.state === 'Being Served').length);
   completedTodayCount = computed(() => this.items().filter(x => x.state === 'Completed').length);
 
+  // Mock authentication state
+  isLoggedIn = signal<boolean>(true);
+  currentUser = signal<string>('Advisor Smith');
+
+  login() {
+    // Mock login
+    this.isLoggedIn.set(true);
+    this.currentUser.set('Advisor Smith');
+  }
+
+  logout() {
+    this.isLoggedIn.set(false);
+    this.currentUser.set('');
+  }
+
   // For the “Current Queue” display, show the one being served first, otherwise first waiting.
   current = computed(() => {
     const serving = this.items().find(x => x.state === 'Being Served');
     if (serving) return serving;
     return this.items().find(x => x.state === 'Waiting') ?? null;
   });
+  queueList = computed(() => {
+    const priorityRank = (p: 'normal' | 'high') => (p === 'high' ? 0 : 1);
+    const stateRank = (s: 'Being Served' | 'Waiting' | 'Completed' | 'No Show') =>
+      s === 'Being Served' ? 0 :
+      s === 'Waiting' ? 1 :
+      s === 'Completed' ? 2 : 3;
+
+    return [...this.items()]
+      // usually you'd only show active queue (serving + waiting)
+      .filter(x => x.state === 'Being Served' || x.state === 'Waiting')
+      // sort: serving first, then waiting; within waiting high priority first
+      .sort((a, b) => {
+        const sr = stateRank(a.state) - stateRank(b.state);
+        if (sr !== 0) return sr;
+        const pr = priorityRank(a.priority) - priorityRank(b.priority);
+        if (pr !== 0) return pr;
+        return a.estWaitMin - b.estWaitMin;
+      });
+  });
+    completeById(studentId: string) {
+    this.items.update(list =>
+      list.map(x => (x.studentId === studentId ? { ...x, state: 'Completed', estWaitMin: 0 } : x))
+    );
+  }
+
+  noShowById(studentId: string) {
+    this.items.update(list =>
+      list.map(x => (x.studentId === studentId ? { ...x, state: 'No Show', estWaitMin: 0 } : x))
+    );
+  }
+
+  manageById(studentId: string) {
+    const s = this.items().find(x => x.studentId === studentId);
+    alert(`Manage clicked for ${s?.name ?? studentId}`);
+  }
+
 
   ngOnInit(): void {
     this.timerId = window.setInterval(() => this.now.set(new Date()), 1000);
@@ -87,7 +140,7 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
     if (this.timerId) window.clearInterval(this.timerId);
   }
 
-  setTab(tab: 'queue' | 'live' | 'appointments') {
+  setTab(tab: 'queue' | 'services' | 'appointments') {
     this.activeTab.set(tab);
   }
 
@@ -134,4 +187,7 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
     const d = this.now();
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
+
+  
+
 }

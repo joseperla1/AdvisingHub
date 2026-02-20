@@ -26,27 +26,24 @@
         <span>{{ formattedTime() }}</span>
       </div>
 
-      <div class="mode-toggle" role="group" aria-label="Mode">
-        <button class="pill" [class.active]="mode() === 'Student'" (click)="mode.set('Student')">
-          <span class="pill-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16">
-              <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="currentColor"/>
-              <path d="M4 20a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-          </span>
-          Student
-        </button>
+            
+      <div class="auth-section">
+        <ng-container *ngIf="!isLoggedIn(); else loggedInBlock">
+          <button class="ghost auth-btn" (click)="login()">
+            <span class="auth-icon" aria-hidden="true">🔐</span>
+            Log In
+          </button>
+        </ng-container>
 
-        <button class="pill" [class.active]="mode() === 'Staff'" (click)="mode.set('Staff')">
-          <span class="pill-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16">
-              <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="currentColor"/>
-              <path d="M6 21c.8-3.8 3.2-6 6-6s5.2 2.2 6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <path d="M12 2l3 3-3 3-3-3 3-3Z" fill="currentColor" opacity=".25"/>
-            </svg>
-          </span>
-          Advisor
-        </button>
+        <ng-template #loggedInBlock>
+          <div class="user-info">
+            <span class="user-name">{{ currentUser() }}</span>
+            <button class="ghost auth-btn" (click)="logout()">
+              <span class="auth-icon" aria-hidden="true"></span>
+              Log Out
+            </button>
+          </div>
+        </ng-template>
       </div>
 
       <button class="ghost">Advisor Dashboard</button>
@@ -57,15 +54,18 @@
   <div class="tabs-wrap">
     <div class="tabs">
       <button class="tab" [class.active]="activeTab() === 'queue'" (click)="setTab('queue')">
-        <span class="tab-icon" aria-hidden="true">⚙️</span>
+        <span class="tab-icon" aria-hidden="true"></span>
         Queue Management
       </button>
-      <button class="tab" [class.active]="activeTab() === 'live'" (click)="setTab('live')">
-        <span class="tab-icon" aria-hidden="true">👥</span>
-        Live Dashboard
+
+      <!-- Services Management -->
+      <button class="tab" [class.active]="activeTab() === 'services'" (click)="setTab('services')">
+        <span class="tab-icon" aria-hidden="true"></span>
+        Services
       </button>
+
       <button class="tab" [class.active]="activeTab() === 'appointments'" (click)="setTab('appointments')">
-        <span class="tab-icon" aria-hidden="true">📅</span>
+        <span class="tab-icon" aria-hidden="true"></span>
         Appointments
       </button>
     </div>
@@ -73,117 +73,150 @@
 
   <!-- Main content -->
   <main class="content">
-    <!-- Hero card -->
-    <section class="card hero">
-      <h1>Advisor Queue Manager</h1>
-      <p style="color: whitesmoke;">Manage the queue, serve students, and track progress</p>
-    </section>
 
-    <!-- Controls card -->
-    <section class="card controls">
-      <div class="controls-head">
-        <div class="controls-title">Queue Management Controls</div>
-        <div class="controls-actions">
-          <button class="btn light" (click)="toggleQueue()">
-            <span class="btn-icon" aria-hidden="true">⏸</span>
-            {{ queueStatus() === 'Active' ? 'Pause Queue' : 'Resume Queue' }}
-          </button>
+    <ng-container [ngSwitch]="activeTab()">
 
-          <button class="btn dark" (click)="serveNext()">
-            <span class="btn-icon" aria-hidden="true">▶</span>
-            Serve Next
-          </button>
-        </div>
-      </div>
+      <!-- QUEUE MANAGEMENT TAB-->
+      <ng-container *ngSwitchCase="'queue'">
 
-      <div class="metrics">
-        <div class="metric">
-          <div class="m-icon blue" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="18" height="18">
-              <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="currentColor"/>
-              <path d="M4 20a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div class="m-label">Waiting</div>
-          <div class="m-value">{{ waitingCount() }}</div>
-        </div>
+        <!-- Hero card -->
+        <section class="card hero">
+          <h1>Advisor Queue Manager</h1>
+          <p style="color: whitesmoke;">Manage the queue, serve students, and track progress</p>
+        </section>
 
-        <div class="metric">
-          <div class="m-icon green" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="18" height="18">
-              <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="currentColor"/>
-              <path d="M6 21c.8-3.8 3.2-6 6-6s5.2 2.2 6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <path d="M18 8h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div class="m-label">Being Served</div>
-          <div class="m-value">{{ beingServedCount() }}</div>
-        </div>
+        <!-- Controls card -->
+        <section class="card controls">
+          <div class="controls-head">
+            <div class="controls-title">Queue Management Controls</div>
+            <div class="controls-actions">
+              <button class="btn light" (click)="toggleQueue()">
+                <span class="btn-icon" aria-hidden="true">⏸</span>
+                {{ queueStatus() === 'Active' ? 'Pause Queue' : 'Resume Queue' }}
+              </button>
 
-        <div class="metric">
-          <div class="m-icon purple" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="18" height="18">
-              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M8 12.5l2.2 2.2L16.5 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div class="m-label">Completed Today</div>
-          <div class="m-value">{{ completedTodayCount() }}</div>
-        </div>
-
-        <div class="metric">
-          <div class="m-icon orange" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="18" height="18">
-              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M12 7v6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <circle cx="12" cy="16.5" r="1" fill="currentColor"/>
-            </svg>
-          </div>
-          <div class="m-label">Queue Status</div>
-          <div class="m-value status">{{ queueStatus() }}</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Current Queue -->
-    <section class="card">
-      <div class="section-title">Current Queue</div>
-
-      <div class="queue-card" *ngIf="current() as cur">
-        <div class="badge-num">1</div>
-
-        <div class="queue-main">
-          <div class="queue-top">
-            <div class="q-name">
-              <span class="name">{{ cur.name }}</span>
-              <span class="tag">{{ cur.priority }}</span>
+              <button class="btn dark" (click)="serveNext()">
+                <span class="btn-icon" aria-hidden="true">▶</span>
+                Serve Next
+              </button>
             </div>
           </div>
 
-          <div class="q-meta">ID: {{ cur.studentId }}</div>
-          <div class="q-reason">{{ cur.reason }}</div>
-          <div class="q-joined">{{ cur.joinedAgo }}</div>
+          <div class="metrics">
+            <div class="metric">
+              <div class="m-icon blue" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18">
+                  <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="currentColor"/>
+                  <path d="M4 20a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="m-label">Waiting</div>
+              <div class="m-value">{{ waitingCount() }}</div>
+            </div>
 
-          <a class="q-notes" *ngIf="cur.notes">{{ cur.notes }}</a>
-        </div>
+            <div class="metric">
+              <div class="m-icon green" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18">
+                  <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="currentColor"/>
+                  <path d="M6 21c.8-3.8 3.2-6 6-6s5.2 2.2 6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M18 8h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="m-label">Being Served</div>
+              <div class="m-value">{{ beingServedCount() }}</div>
+            </div>
 
-        <div class="queue-side">
-          <div class="wait">
-            <div class="wait-label">Est. Wait</div>
-            <div class="wait-value">{{ cur.estWaitMin }} min</div>
+            <div class="metric">
+              <div class="m-icon purple" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M8 12.5l2.2 2.2L16.5 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="m-label">Completed Today</div>
+              <div class="m-value">{{ completedTodayCount() }}</div>
+            </div>
+
+            <div class="metric">
+              <div class="m-icon orange" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M12 7v6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <circle cx="12" cy="16.5" r="1" fill="currentColor"/>
+                </svg>
+              </div>
+              <div class="m-label">Queue Status</div>
+              <div class="m-value status">{{ queueStatus() }}</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Current Queue -->
+        <section class="card">
+          <div class="section-title">Current Queue</div>
+
+          <div class="queue-list">
+          <div class="queue-card" *ngFor="let cur of queueList(); let i = index">
+            <div class="badge-num">{{ i + 1 }}</div>
+
+            <div class="queue-main">
+              <div class="queue-top">
+                <div class="q-name">
+                  <span class="name">{{ cur.name }}</span>
+                  <span class="tag">{{ cur.priority }}</span>
+                </div>
+              </div>
+
+              <div class="q-meta">ID: {{ cur.studentId }}</div>
+              <div class="q-reason">{{ cur.reason }}</div>
+              <div class="q-joined">{{ cur.joinedAgo }}</div>
+
+              <a class="q-notes" *ngIf="cur.notes">{{ cur.notes }}</a>
+            </div>
+
+            <div class="queue-side">
+              <div class="wait">
+                <div class="wait-label">Est. Wait</div>
+                <div class="wait-value">{{ cur.estWaitMin }} min</div>
+              </div>
+
+              <div class="state-pill" [class.serving]="cur.state === 'Being Served'">
+                {{ cur.state }}
+              </div>
+            </div>
+
+            <div class="queue-actions">
+              <!--  per-row actions -->
+              <button class="btn dark compact" (click)="completeById(cur.studentId)">✓&nbsp; Complete</button>
+              <button class="btn light compact" (click)="noShowById(cur.studentId)">×&nbsp; No Show</button>
+              <button class="btn light compact" (click)="manageById(cur.studentId)">Manage</button>
+            </div>
           </div>
 
-          <div class="state-pill" [class.serving]="cur.state === 'Being Served'">
-            {{ cur.state }}
+          <div class="empty-queue" *ngIf="queueList().length === 0">
+            No students currently in the queue.
           </div>
         </div>
 
-        <div class="queue-actions">
-          <button class="btn dark compact" (click)="completeCurrent()">✓&nbsp; Complete</button>
-          <button class="btn light compact" (click)="noShowCurrent()">×&nbsp; No Show</button>
-          <button class="btn light compact" (click)="manageCurrent()">Manage</button>
-        </div>
-      </div>
-    </section>
+        </section>
+      </ng-container>
+
+
+      <!-- SERVICES TAB-->
+      <ng-container *ngSwitchCase="'services'">
+        <app-services-management></app-services-management>
+      </ng-container>
+
+
+      <!-- APPOINTMENTS TAB (placeholder) -->
+      <ng-container *ngSwitchCase="'appointments'">
+        <section class="card hero">
+          <h1>Appointments</h1>
+          <p style="color: whitesmoke;">Appointments UI coming soon...</p>
+        </section>
+      </ng-container>
+
+    </ng-container>
+
   </main>
 </div>
