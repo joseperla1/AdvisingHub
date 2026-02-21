@@ -1,4 +1,5 @@
 <div class="ah-page">
+  <!-- TABS NAVIGATION -->
   <div class="ah-tabs">
     <a class="ah-tab active" routerLink="/user/dashboard">User Dashboard</a>
     <a class="ah-tab" routerLink="/user/join">Join Queue</a>
@@ -6,11 +7,13 @@
     <a class="ah-tab" routerLink="/user/history">History</a>
   </div>
 
+  <!-- HERO SECTION -->
   <div class="ah-hero">
     <h1>User Dashboard</h1>
     <p>View your ticket, join a service, and track updates</p>
   </div>
 
+  <!-- TOP STATS GRID -->
   <div class="ah-grid cols-3">
     <div class="ah-stat">
       <div class="label">Status</div>
@@ -36,8 +39,9 @@
 
   <div class="ah-divider"></div>
 
+  <!-- MAIN GRID: CURRENT TICKET + NOTIFICATIONS -->
   <div class="ah-grid cols-2">
-    <!-- LEFT SIDE -->
+    <!-- LEFT SIDE: Current Ticket -->
     <div class="ah-card">
       <div class="ah-card-header">
         <h2>Current Ticket</h2>
@@ -48,7 +52,10 @@
         <div class="ah-row-top">
           <div>
             <h3>{{ activeTicket.serviceName }}</h3>
-            <p><b>Ticket ID:</b> {{ activeTicket.ticketId }}</p>
+            <p>
+              <b>Ticket ID:</b> {{ activeTicket.ticketId }}
+              <button class="ah-btn ghost small" (click)="copyTicketId()">Copy</button>
+            </p>
             <p><b>Status:</b> {{ activeTicket.status }}</p>
           </div>
 
@@ -114,7 +121,7 @@
       </ng-template>
     </div>
 
-    <!-- RIGHT SIDE -->
+    <!-- RIGHT SIDE: Notifications -->
     <div class="ah-card">
       <div class="ah-card-header">
         <h2>Notifications ({{ notifications.length }})</h2>
@@ -158,6 +165,8 @@
                 <span class="ah-help">
                   {{ n.time || 'Now' }}
                 </span>
+
+                <button class="ah-btn ghost small" (click)="dismissNotification(n)">×</button>
               </div>
 
               <h3 style="font-size:14px;">
@@ -169,6 +178,44 @@
       </div>
     </div>
   </div>
+
+  <!-- ===== NEXT STEPS / QUICK ACTION CARD ===== -->
+  <div class="ah-card quick-action" *ngIf="activeTicket; else joinTip" style="margin-top:14px;">
+  <div class="ah-card-header">
+    <h2>Next Steps</h2>
+  </div>
+  <p>
+    Your turn is coming up! Check your queue status or prepare required documents.
+  </p>
+  <div class="ah-row-actions">
+    <button class="ah-btn primary" routerLink="/user/status">
+      View Status
+    </button>
+    <!-- Quick Links -->
+    <button class="ah-btn ghost" (click)="messageAdmin()">
+      Message Admin
+    </button>
+    <button class="ah-btn ghost" (click)="viewServiceInfo(activeTicket.serviceName)">
+      View Service Info
+    </button>
+  </div>
+</div>
+
+<ng-template #joinTip>
+  <div class="ah-card quick-action" style="margin-top:14px;">
+    <div class="ah-card-header">
+      <h2>Next Steps</h2>
+    </div>
+    <p>
+      You have no active ticket. Join a service now to start tracking your spot in line!
+    </p>
+    <div class="ah-row-actions">
+      <button class="ah-btn primary" routerLink="/user/join">
+        Join Queue
+      </button>
+    </div>
+  </div>
+</ng-template>
 
   <!-- SERVICES -->
   <div class="ah-card" style="margin-top:14px;">

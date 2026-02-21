@@ -40,7 +40,6 @@ export class UserDashboardComponent implements OnInit {
   constructor(private router: Router) {}
 
   ngOnInit(): void {
-    // Try to load from localStorage first (works with A2 mock flow)
     this.activeTicket =
       this.safeParse<ActiveTicket | null>('activeTicket', null) ??
       this.safeParse<ActiveTicket | null>('ah_activeTicket_simple', null) ??
@@ -56,7 +55,6 @@ export class UserDashboardComponent implements OnInit {
       this.safeParse<UserNotification[]>('ah_notifications_simple', []) ??
       [];
 
-    // Fallback mock data so it always looks good
     if (!this.activeTicket) {
       this.activeTicket = {
         serviceName: 'General Advising',
@@ -103,8 +101,26 @@ export class UserDashboardComponent implements OnInit {
     this.activeTicket = null;
     localStorage.removeItem('activeTicket');
     localStorage.removeItem('ah_activeTicket_simple');
-    // optional: add a notification
     this.notifications.unshift({ type: 'INFO', message: 'You left the queue.', time: this.nowTime() });
+    localStorage.setItem('notifications', JSON.stringify(this.notifications));
+  }
+
+  /* ===== NEW QUICK LINKS METHODS ===== */
+  messageAdmin(): void {
+    alert('This would open a chat or email to the admin.');
+  }
+
+  viewServiceInfo(serviceName: string): void {
+    alert(`This would show info for the service: ${serviceName}`);
+  }
+
+  copyTicketId(): void {
+    if (this.activeTicket) navigator.clipboard.writeText(this.activeTicket.ticketId);
+    alert('Ticket ID copied to clipboard!');
+  }
+
+  dismissNotification(notification: UserNotification): void {
+    this.notifications = this.notifications.filter(n => n !== notification);
     localStorage.setItem('notifications', JSON.stringify(this.notifications));
   }
 
