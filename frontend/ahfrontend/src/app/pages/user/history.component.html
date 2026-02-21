@@ -1,0 +1,91 @@
+<div class="ah-page">
+
+  <!-- Red hero banner -->
+  <section class="ah-hero">
+    <h1>History</h1>
+    <p>Review your past queue tickets and outcomes.</p>
+  </section>
+
+  <!-- Red pill tabs -->
+  <nav class="ah-tabs">
+    <a class="ah-tab" routerLink="/user/dashboard" routerLinkActive="active">Dashboard</a>
+    <a class="ah-tab" routerLink="/user/join" routerLinkActive="active">Join Queue</a>
+    <a class="ah-tab" routerLink="/user/status" routerLinkActive="active">Queue Status</a>
+    <a class="ah-tab" routerLink="/user/history" routerLinkActive="active">History</a>
+  </nav>
+
+  <!-- Header -->
+  <div class="ah-card">
+    <div class="ah-card-header">
+      <div>
+        <h2>Ticket History</h2>
+        <small *ngIf="hasItems()">{{ items.length }} record(s)</small>
+        <small *ngIf="!hasItems()">No records yet</small>
+      </div>
+
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="ah-btn ghost" type="button" (click)="refresh()">Refresh</button>
+        <button class="ah-btn red" type="button" (click)="clearHistory()" [disabled]="!hasItems()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div class="ah-card" *ngIf="!hasItems()" style="margin-top:14px;">
+    <p style="margin:0; color: var(--muted); font-weight:700;">
+      No history yet. Join a queue to see your past tickets here.
+    </p>
+  </div>
+
+  <!-- History list -->
+  <div class="ah-card" *ngFor="let h of items" style="margin-top:14px;">
+
+    <div class="ah-row-top">
+      <div>
+        <h3 style="margin:0;">{{ h.serviceName }}</h3>
+        <p style="margin:6px 0 0; color: var(--muted); font-weight:800;">
+          Ticket: {{ h.id }}
+        </p>
+
+        <div style="margin-top:10px;">
+          <!-- Badge (uses your theme colors) -->
+          <span class="ah-badge" [ngClass]="outcomeBadgeThemeClass(h.outcome)">
+            {{ outcomeLabel(h.outcome) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ah-divider"></div>
+
+    <div class="ah-grid cols-3">
+      <div class="ah-stat">
+        <div class="label">Last Known Status</div>
+        <div class="value" style="font-size:16px;">{{ statusLabel(h.status) }}</div>
+      </div>
+
+      <div class="ah-stat">
+        <div class="label">Position</div>
+        <div class="value" style="font-size:16px;">{{ formatPosition(h.position) }}</div>
+      </div>
+
+      <div class="ah-stat">
+        <div class="label">Estimated Wait</div>
+        <div class="value" style="font-size:16px;">{{ formatWait(h.estWaitMin) }}</div>
+      </div>
+    </div>
+
+    <div class="ah-divider"></div>
+
+    <div style="display:grid; gap:6px;">
+      <div *ngIf="h.joinedAtIso">
+        <strong>Joined:</strong> {{ h.joinedAtIso | date:'short' }}
+      </div>
+      <div *ngIf="h.leftAtIso">
+        <strong>Left:</strong> {{ h.leftAtIso | date:'short' }}
+      </div>
+    </div>
+
+  </div>
+
+</div>

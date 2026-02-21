@@ -1,0 +1,46 @@
+<div class="ah-page">
+
+  <section class="ah-hero">
+    <h1 class="ah-hero__title">Join Queue</h1>
+    <p class="ah-hero__subtitle">Select a service and join the advising line.</p>
+  </section>
+
+  <nav class="ah-tabs">
+    <a class="ah-tab" routerLink="/user/dashboard">Dashboard</a>
+    <a class="ah-tab is-active" routerLink="/user/join-queue">Join Queue</a>
+    <a class="ah-tab" routerLink="/user/queue-status">Queue Status</a>
+    <a class="ah-tab" routerLink="/user/history">History</a>
+  </nav>
+
+  <div class="ah-card">
+
+    <div *ngIf="submitError()" class="ah-alert ah-alert--error">
+      {{ submitError() }}
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="joinQueue()" class="ah-form">
+
+      <div class="ah-field">
+        <label>Service</label>
+        <select formControlName="serviceId" class="ah-select">
+          <option value="">Select a service...</option>
+          <option *ngFor="let s of services" [value]="s.id">
+            {{ s.name }} • Avg {{ s.avgWaitMins }} min
+          </option>
+        </select>
+      </div>
+
+      <div class="ah-field">
+        <label>Notes (optional)</label>
+        <textarea formControlName="notes" rows="4" class="ah-textarea"></textarea>
+      </div>
+
+      <button class="ah-btn ah-btn--primary" type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Joining...' : 'Join Queue' }}
+      </button>
+
+    </form>
+
+  </div>
+
+</div>

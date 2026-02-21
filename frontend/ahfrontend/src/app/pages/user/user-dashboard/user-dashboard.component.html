@@ -1,0 +1,216 @@
+<div class="ah-page">
+  <div class="ah-tabs">
+    <a class="ah-tab active" routerLink="/user/dashboard">User Dashboard</a>
+    <a class="ah-tab" routerLink="/user/join">Join Queue</a>
+    <a class="ah-tab" routerLink="/user/status">Queue Status</a>
+    <a class="ah-tab" routerLink="/user/history">History</a>
+  </div>
+
+  <div class="ah-hero">
+    <h1>User Dashboard</h1>
+    <p>View your ticket, join a service, and track updates</p>
+  </div>
+
+  <div class="ah-grid cols-3">
+    <div class="ah-stat">
+      <div class="label">Status</div>
+      <div class="value" style="font-size:18px;">
+        {{ activeTicket ? activeTicket.status : '—' }}
+      </div>
+    </div>
+
+    <div class="ah-stat">
+      <div class="label">Position</div>
+      <div class="value">
+        {{ activeTicket ? ('#' + activeTicket.position) : '—' }}
+      </div>
+    </div>
+
+    <div class="ah-stat">
+      <div class="label">Estimated Wait</div>
+      <div class="value">
+        {{ activeTicket ? (activeTicket.estimatedWait + ' min') : '—' }}
+      </div>
+    </div>
+  </div>
+
+  <div class="ah-divider"></div>
+
+  <div class="ah-grid cols-2">
+    <!-- LEFT SIDE -->
+    <div class="ah-card">
+      <div class="ah-card-header">
+        <h2>Current Ticket</h2>
+        <small>Live (mock) details</small>
+      </div>
+
+      <div *ngIf="activeTicket; else noTicket" class="ah-row">
+        <div class="ah-row-top">
+          <div>
+            <h3>{{ activeTicket.serviceName }}</h3>
+            <p><b>Ticket ID:</b> {{ activeTicket.ticketId }}</p>
+            <p><b>Status:</b> {{ activeTicket.status }}</p>
+          </div>
+
+          <span
+            class="ah-badge"
+            [ngClass]="badgeClassForStatus(activeTicket.status)"
+          >
+            {{ activeTicket.status }}
+          </span>
+        </div>
+
+        <div class="ah-divider"></div>
+
+        <div class="ah-grid cols-3">
+          <div class="ah-stat">
+            <div class="label">Position</div>
+            <div class="value">#{{ activeTicket.position }}</div>
+          </div>
+
+          <div class="ah-stat">
+            <div class="label">Estimated Wait</div>
+            <div class="value">
+              {{ activeTicket.estimatedWait }} min
+            </div>
+          </div>
+
+          <div class="ah-stat">
+            <div class="label">Service</div>
+            <div class="value" style="font-size:16px;">
+              {{ activeTicket.serviceName }}
+            </div>
+          </div>
+        </div>
+
+        <div class="ah-divider"></div>
+
+        <div class="ah-row-actions">
+          <button class="ah-btn ghost" routerLink="/user/status">
+            View Status
+          </button>
+
+          <button class="ah-btn red" (click)="leaveQueue()">
+            Leave Queue
+          </button>
+        </div>
+      </div>
+
+      <ng-template #noTicket>
+        <div class="ah-row">
+          <h3>No active ticket</h3>
+          <p>
+            Join a service to get in line and track your position.
+          </p>
+          <div class="ah-row-actions">
+            <button
+              class="ah-btn primary"
+              routerLink="/user/join"
+            >
+              Join Queue
+            </button>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="ah-card">
+      <div class="ah-card-header">
+        <h2>Notifications ({{ notifications.length }})</h2>
+        <button
+          class="ah-btn ghost"
+          (click)="markAllRead()"
+        >
+          Mark All Read
+        </button>
+      </div>
+
+      <div *ngIf="notifications.length === 0" class="ah-help">
+        No notifications.
+      </div>
+
+      <div
+        class="ah-grid"
+        *ngIf="notifications.length > 0"
+      >
+        <div
+          class="ah-row"
+          *ngFor="let n of notificationsTop5"
+        >
+          <div class="ah-row-top">
+            <div>
+              <div
+                style="
+                  display:flex;
+                  gap:8px;
+                  align-items:center;
+                  margin-bottom:6px;
+                "
+              >
+                <span
+                  class="ah-badge"
+                  [ngClass]="badgeClassForNotif(n.type)"
+                >
+                  {{ n.type || 'INFO' }}
+                </span>
+
+                <span class="ah-help">
+                  {{ n.time || 'Now' }}
+                </span>
+              </div>
+
+              <h3 style="font-size:14px;">
+                {{ n.message }}
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SERVICES -->
+  <div class="ah-card" style="margin-top:14px;">
+    <div class="ah-card-header">
+      <h2>Available Services</h2>
+      <small>Select one to join</small>
+    </div>
+
+    <div *ngIf="services.length === 0" class="ah-help">
+      No services available.
+    </div>
+
+    <div
+      class="ah-grid"
+      *ngIf="services.length > 0"
+    >
+      <div
+        class="ah-row"
+        *ngFor="let s of services"
+      >
+        <div class="ah-row-top">
+          <div>
+            <h3>{{ s.name }}</h3>
+            <p>
+              {{ s.description || 'Advising service.' }}
+            </p>
+          </div>
+
+          <div class="ah-row-actions">
+            <span class="ah-badge info">
+              avg {{ s.avgMinutes ?? 15 }} min
+            </span>
+
+            <button
+              class="ah-btn primary"
+              (click)="goToJoin(s)"
+            >
+              Join
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

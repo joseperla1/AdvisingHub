@@ -1,0 +1,81 @@
+<div class="ah-page">
+  <div class="ah-hero ah-hero--red">
+    <div class="ah-hero__content">
+      <h1 class="ah-hero__title">Queue Status</h1>
+      <p class="ah-hero__subtitle">Track your position and estimated wait time.</p>
+    </div>
+  </div>
+
+  <div class="ah-tabs ah-tabs--pills">
+    <a class="ah-tab" routerLink="/user/dashboard">Dashboard</a>
+    <a class="ah-tab" routerLink="/user/join-queue">Join Queue</a>
+    <a class="ah-tab ah-tab--active" routerLink="/user/queue-status">Queue Status</a>
+    <a class="ah-tab" routerLink="/user/history">History</a>
+  </div>
+
+  <!-- No active ticket -->
+  <div class="ah-card" *ngIf="!ticket()">
+    <div class="ah-card__header">
+      <div class="ah-card__titleRow">
+        <div class="ah-card__title">No Active Ticket</div>
+        <span class="ah-badge ah-badge--neutral">Idle</span>
+      </div>
+    </div>
+
+    <div class="ah-card__body">
+      <p class="ah-text">
+        You’re not currently in a queue. Go to Join Queue to select a service and join the line.
+      </p>
+
+      <div class="ah-actions">
+        <a class="ah-btn ah-btn--primary" routerLink="/user/join-queue">Go to Join Queue</a>
+        <button class="ah-btn ah-btn--secondary" type="button" (click)="seedDemoTicket()">
+          Load Demo Ticket
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active ticket -->
+  <div class="ah-card" *ngIf="ticket() as t">
+    <div class="ah-card__header">
+      <div class="ah-card__titleRow">
+        <div class="ah-card__title">Queue Status</div>
+        <span [class]="badgeClass()">{{ statusLabel() }}</span>
+      </div>
+    </div>
+
+    <div class="ah-card__body ah-statusBody">
+      <div class="ah-statusRow">
+        <div class="ah-label">Service:</div>
+        <div class="ah-value">{{ t.serviceName }}</div>
+      </div>
+
+      <div class="ah-statusRow">
+        <div class="ah-label">Ticket ID:</div>
+        <div class="ah-value ah-mono">{{ t.id }}</div>
+      </div>
+
+      <div class="ah-statusRow">
+        <div class="ah-label">Status:</div>
+        <div class="ah-value">{{ statusLabel() }}</div>
+      </div>
+
+      <div class="ah-statusRow">
+        <div class="ah-label">Position:</div>
+        <div class="ah-value">{{ positionDisplay() }}</div>
+      </div>
+
+      <div class="ah-statusRow">
+        <div class="ah-label">Estimated Wait:</div>
+        <div class="ah-value">{{ waitDisplay() }}</div>
+      </div>
+
+      <div class="ah-actions ah-actions--left">
+        <button class="ah-btn ah-btn--danger" type="button" (click)="leaveQueue()">
+          Leave Queue
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
