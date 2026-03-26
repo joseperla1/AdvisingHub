@@ -17,7 +17,7 @@ const queueItems = [
     studentId: 'STU002',
     serviceId: 'svc2',
     serviceName: 'Add/Drop',
-    priority: 'normal',
+    priority: 'high',
     status: 'waiting',
     joinedAt: '2026-03-24T18:05:00.000Z'
   },
@@ -28,7 +28,7 @@ const queueItems = [
     studentId: 'STU003',
     serviceId: 'svc3',
     serviceName: 'Graduation Check',
-    priority: 'normal',
+    priority: 'low',
     status: 'waiting',
     joinedAt: '2026-03-24T18:10:00.000Z'
   }

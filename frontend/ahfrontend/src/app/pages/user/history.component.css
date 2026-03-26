@@ -1,0 +1,268 @@
+/* Page layout */
+.ah-page {
+  padding-bottom: 28px;
+}
+
+/* Hero */
+.ah-hero {
+  border-radius: 18px;
+  margin: 14px 14px 10px;
+  overflow: hidden;
+}
+
+.ah-hero--red {
+  background: linear-gradient(135deg, #b31217, #e52d27);
+  color: #fff;
+}
+
+.ah-hero__inner {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 18px 16px;
+}
+
+.ah-hero__title {
+  font-size: 28px;
+  line-height: 1.1;
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+.ah-hero__subtitle {
+  margin: 6px 0 0;
+  opacity: 0.92;
+  font-size: 13px;
+}
+
+.ah-hero__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Toolbar */
+.ah-toolbar {
+  margin: 0 14px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ah-toolbar__meta {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+/* Pill tabs */
+.ah-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ah-tab {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.ah-tab--active {
+  border-color: rgba(229, 45, 39, 0.35);
+  box-shadow: 0 8px 24px rgba(229, 45, 39, 0.12);
+  font-weight: 600;
+}
+
+/* Cards / list */
+.ah-list {
+  display: grid;
+  gap: 12px;
+  margin: 0 14px;
+}
+
+.ah-card {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06);
+}
+
+.ah-historyCard__titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ah-historyCard__title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.ah-historyCard__meta {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.ah-metaItem {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.ah-metaLabel {
+  font-size: 12px;
+  opacity: 0.7;
+  min-width: 48px;
+}
+
+.ah-metaValue {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.ah-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 12px 0;
+}
+
+/* Stats row */
+.ah-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ah-stat {
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.ah-stat__label {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-bottom: 6px;
+}
+
+.ah-stat__value {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Empty state */
+.ah-empty {
+  margin: 0 14px;
+  text-align: center;
+  padding: 18px 14px;
+}
+
+.ah-empty__icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.ah-empty__title {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.ah-empty__text {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-bottom: 12px;
+}
+
+/* Badges (works even if your global CSS doesn't define them) */
+.ah-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.ah-badge--success {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.22);
+}
+
+.ah-badge--warning {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.24);
+}
+
+.ah-badge--danger {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.24);
+}
+
+.ah-badge--neutral {
+  background: rgba(148, 163, 184, 0.16);
+  border-color: rgba(148, 163, 184, 0.26);
+}
+
+/* Buttons (fallback styling if your global theme doesn't include these) */
+.ah-btn {
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  cursor: pointer;
+}
+
+.ah-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ah-btn--primary {
+  border-color: rgba(229, 45, 39, 0.35);
+  box-shadow: 0 10px 26px rgba(229, 45, 39, 0.14);
+}
+
+.ah-btn--secondary {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.ah-btn--danger {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+/* Force History tab text to be visible (only on History page) */
+.ah-page .ah-tabs .ah-tab{
+  color: #ffffff !important;
+  font-weight: 900;
+}
+
+/* Active tab = dark text */
+.ah-page .ah-tabs .ah-tab.active{
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+/* If routerLinkActive is applied but something still overrides */
+.ah-page .ah-tabs a.ah-tab,
+.ah-page .ah-tabs a.ah-tab:link,
+.ah-page .ah-tabs a.ah-tab:visited{
+  color: inherit !important;
+  text-decoration: none !important;
+}
