@@ -1,0 +1,34 @@
+const queueService = require('../services/queueService');
+
+async function joinQueue(req, res, next) {
+  try {
+    const queueItem = await queueService.joinQueue(req.body);
+
+    res.status(201).json({
+      success: true,
+      message: 'User joined queue successfully.',
+      data: queueItem
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function leaveQueue(req, res, next) {
+  try {
+    const queueItem = await queueService.leaveQueue(req.params.queueId);
+
+    res.status(200).json({
+      success: true,
+      message: 'User left queue successfully.',
+      data: queueItem
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = {
+  joinQueue,
+  leaveQueue
+};

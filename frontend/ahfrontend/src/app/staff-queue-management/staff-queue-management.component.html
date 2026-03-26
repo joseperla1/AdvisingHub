@@ -220,49 +220,59 @@
             <section class="card">
               <div class="section-title">Current Queue</div>
 
-              <div class="queue-list">
-                <div class="queue-card" *ngFor="let cur of queueList(); let i = index">
-                  <div class="badge-num">{{ i + 1 }}</div>
+              <div *ngIf="isQueueLoading()">
+                <p>Loading queue...</p>
+              </div>
 
-                  <div class="queue-main">
-                    <div class="queue-top">
-                      <div class="q-name">
-                        <span class="name">{{ cur.name }}</span>
-                        <span class="tag">{{ cur.priority }}</span>
+              <div *ngIf="queueError()">
+                <p>{{ queueError() }}</p>
+                <button class="btn light compact" (click)="loadQueue()">Retry</button>
+              </div>
+
+              <div *ngIf="!isQueueLoading() && !queueError()">
+                <div class="queue-list">
+                  <div class="queue-card" *ngFor="let cur of queueList(); let i = index">
+                    <div class="badge-num">{{ i + 1 }}</div>
+
+                    <div class="queue-main">
+                      <div class="queue-top">
+                        <div class="q-name">
+                          <span class="name">{{ cur.name }}</span>
+                          <span class="tag">{{ cur.priority }}</span>
+                        </div>
+                      </div>
+
+                      <div class="q-meta">ID: {{ cur.studentId }}</div>
+                      <div class="q-reason">{{ cur.reason }}</div>
+                      <div class="q-joined">{{ cur.joinedAgo }}</div>
+
+                      <a class="q-notes" *ngIf="cur.notes">{{ cur.notes }}</a>
+                    </div>
+
+                    <div class="queue-side">
+                      <div class="wait">
+                        <div class="wait-label">Est. Wait</div>
+                        <div class="wait-value">{{ cur.estWaitMin }} min</div>
+                      </div>
+
+                      <div class="state-pill" [class.serving]="cur.state === 'Being Served'">
+                        {{ cur.state }}
                       </div>
                     </div>
 
-                    <div class="q-meta">ID: {{ cur.studentId }}</div>
-                    <div class="q-reason">{{ cur.reason }}</div>
-                    <div class="q-joined">{{ cur.joinedAgo }}</div>
-
-                    <a class="q-notes" *ngIf="cur.notes">{{ cur.notes }}</a>
-                  </div>
-
-                  <div class="queue-side">
-                    <div class="wait">
-                      <div class="wait-label">Est. Wait</div>
-                      <div class="wait-value">{{ cur.estWaitMin }} min</div>
-                    </div>
-
-                    <div class="state-pill" [class.serving]="cur.state === 'Being Served'">
-                      {{ cur.state }}
+                    <div class="queue-actions">
+                      <button class="btn dark compact" (click)="completeById(cur.id)">✓&nbsp; Complete</button>
+                      <button class="btn light compact" (click)="noShowById(cur.id)">×&nbsp; No Show</button>
+                      <button class="btn light compact" (click)="manageById(cur.id)">Manage</button>
                     </div>
                   </div>
 
-                  <div class="queue-actions">
-                    <button class="btn dark compact" (click)="completeById(cur.studentId)">✓&nbsp; Complete</button>
-                    <button class="btn light compact" (click)="noShowById(cur.studentId)">×&nbsp; No Show</button>
-                    <button class="btn light compact" (click)="manageById(cur.studentId)">Manage</button>
+                  <div class="empty-queue" *ngIf="queueList().length === 0">
+                    No students currently in the queue.
                   </div>
-                </div>
-
-                <div class="empty-queue" *ngIf="queueList().length === 0">
-                  No students currently in the queue.
                 </div>
               </div>
             </section>
-
           </div>
         </div>
       </ng-container>
