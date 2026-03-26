@@ -1,9 +1,17 @@
 import { Routes } from '@angular/router';
 import { StaffQueueManagementComponent } from './/staff-queue-management/staff-queue-management.component';
 
-export const routes: Routes = [
-<<<<<<< HEAD
+// TEMPORARY startup route switch
+// Change this to 'admin' or 'user/dashboard' depending on which view you want first.
+// Remove this once login-based routing is implemented.
+const DEFAULT_START_ROUTE = 'user/dashboard';
+// const DEFAULT_START_ROUTE = 'admin';
 
+export const routes: Routes = [
+  {
+    path: 'admin',
+    component: StaffQueueManagementComponent
+  },
   {
     path: 'user/dashboard',
     loadComponent: () =>
@@ -32,13 +40,7 @@ export const routes: Routes = [
         .then(m => m.HistoryComponent)
   },
 
-  // Default route
-  { path: '', redirectTo: 'user/dashboard', pathMatch: 'full' },
-
-  // Wildcard fallback
-  { path: '**', redirectTo: 'user/dashboard' }
-
-=======
-  { path: '', component: StaffQueueManagementComponent },
->>>>>>> advisor queue manager dashboard
+  
+  { path: '', redirectTo: DEFAULT_START_ROUTE, pathMatch: 'full' },
+  { path: '**', redirectTo: DEFAULT_START_ROUTE }
 ];

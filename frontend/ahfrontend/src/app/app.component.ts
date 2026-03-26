@@ -6,14 +6,8 @@ import { RouterOutlet } from '@angular/router';
   standalone: true,
   imports: [RouterOutlet],
   templateUrl: './app.component.html',
-<<<<<<< HEAD
-  styleUrls: ['./app.component.css'],
+  // styleUrls: ['./app.component.css'],
 })
 export class AppComponent {
-  // ✅ Fixes: "Property 'title' does not exist on type 'AppComponent'"
   title = 'QueueSmart';
 }
-=======
-})
-export class AppComponent {}
->>>>>>> advisor queue manager dashboard
