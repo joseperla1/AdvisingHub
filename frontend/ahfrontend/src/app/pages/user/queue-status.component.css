@@ -1,0 +1,170 @@
+/* Layout container */
+.ah-page {
+  padding: 16px;
+}
+
+/* Red hero like your Join Queue header */
+.ah-hero.ah-hero--red {
+  background: #b10018;
+  color: #fff;
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.10);
+}
+
+.ah-hero__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.ah-hero__subtitle {
+  margin: 6px 0 0 0;
+  opacity: 0.95;
+  font-size: 13px;
+}
+
+/* Pill tabs row */
+.ah-tabs.ah-tabs--pills {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0 16px;
+  flex-wrap: wrap;
+}
+
+.ah-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+  text-decoration: none;
+  background: #ffffff;
+  color: #111;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+}
+
+.ah-tab.ah-tab--active {
+  background: rgba(177, 0, 24, 0.10);
+  border-color: rgba(177, 0, 24, 0.30);
+  color: #b10018;
+}
+
+/* Card styling similar to your screenshot */
+.ah-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  max-width: 980px;
+}
+
+.ah-card__header {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.ah-card__body {
+  padding: 16px;
+}
+
+.ah-card__titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ah-card__title {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* Status rows (Service / Ticket ID / etc.) */
+.ah-statusBody {
+  display: grid;
+  gap: 10px;
+}
+
+.ah-statusRow {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.ah-label {
+  font-weight: 800;
+  color: #111;
+}
+
+.ah-value {
+  font-weight: 600;
+  color: #111;
+}
+
+/* Buttons */
+.ah-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.ah-actions--left {
+  justify-content: flex-start;
+}
+
+/* Badge base (if your global theme already has these, this won’t hurt) */
+.ah-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.ah-badge--info {
+  background: rgba(0, 98, 255, 0.10);
+  color: #0056d6;
+  border-color: rgba(0, 98, 255, 0.25);
+}
+
+.ah-badge--warning {
+  background: rgba(255, 170, 0, 0.14);
+  color: #8a5a00;
+  border-color: rgba(255, 170, 0, 0.35);
+}
+
+.ah-badge--success {
+  background: rgba(0, 160, 80, 0.14);
+  color: #0a6a3a;
+  border-color: rgba(0, 160, 80, 0.35);
+}
+
+.ah-badge--danger {
+  background: rgba(177, 0, 24, 0.14);
+  color: #b10018;
+  border-color: rgba(177, 0, 24, 0.35);
+}
+
+.ah-badge--neutral {
+  background: rgba(0, 0, 0, 0.06);
+  color: #333;
+  border-color: rgba(0, 0, 0, 0.14);
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .ah-statusRow {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

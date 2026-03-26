@@ -1,1 +1,358 @@
-/* You can add global styles to this file, and also import other style files */
+/* =========================
+   Advising Hub UI Kit (Light)
+   ========================= */
+
+:root{
+  --red: #ef2f2f;
+  --red-dark: #d91f1f;
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #667085;
+  --border: #e5e7eb;
+  --shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  --radius: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  --success-bg: #eafaf1;
+  --success-bd: #bde9cf;
+  --success-tx: #16794c;
+
+  --warn-bg: #fff7e6;
+  --warn-bd: #ffe0a3;
+  --warn-tx: #8a5a00;
+
+  --info-bg: #eef4ff;
+  --info-bd: #c6d4ff;
+  --info-tx: #1d4ed8;
+
+  --danger-bg: #fff1f2;
+  --danger-bd: #fecdd3;
+  --danger-tx: #9f1239;
+
+  --btn: #0b1220;
+}
+
+*{ box-sizing: border-box; }
+html, body{ height: 100%; }
+body{
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+}
+
+/* Page container */
+.ah-page{
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px 16px 40px;
+}
+
+/* Top title row */
+.ah-top{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.ah-brand{
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ah-brand .title{
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+.ah-brand .subtitle{
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Red pill nav (like your screenshots) */
+.ah-tabs{
+  background: var(--red);
+  border-radius: var(--radius-pill);
+  padding: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow);
+  margin-bottom: 18px;
+}
+.ah-tab{
+  flex: 1;
+  text-align: center;
+  padding: 12px 10px;
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(255,255,255,.92);
+  transition: .15s ease;
+}
+.ah-tab:hover{ filter: brightness(1.02); transform: translateY(-1px); }
+.ah-tab.active{
+  background: #fff;
+  color: #111827;
+}
+
+/* Red hero band */
+.ah-hero{
+  background: var(--red);
+  border-radius: var(--radius-lg);
+  padding: 26px 18px;
+  color: #fff;
+  text-align: center;
+  box-shadow: var(--shadow);
+  margin-bottom: 18px;
+}
+.ah-hero h1{
+  margin: 0;
+  font-size: 34px;
+  letter-spacing: .2px;
+}
+.ah-hero p{
+  margin: 8px 0 0;
+  opacity: .92;
+  font-weight: 500;
+}
+
+/* Cards */
+.ah-card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  padding: 16px;
+}
+.ah-card + .ah-card{ margin-top: 14px; }
+
+.ah-card-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.ah-card-header h2{
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: .2px;
+}
+.ah-card-header small{ color: var(--muted); }
+
+/* Grid helpers */
+.ah-grid{ display: grid; gap: 14px; }
+@media (min-width: 980px){
+  .ah-grid.cols-2{ grid-template-columns: 1.2fr .8fr; }
+  .ah-grid.cols-3{ grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Stat tiles */
+.ah-stat{
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  background: #fff;
+  display: grid;
+  gap: 6px;
+}
+.ah-stat .label{ font-size: 12px; color: var(--muted); font-weight: 700; }
+.ah-stat .value{ font-size: 22px; font-weight: 900; }
+
+/* Buttons */
+.ah-btn{
+  border: 1px solid var(--border);
+  background: #fff;
+  color: #111827;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: .15s ease;
+}
+.ah-btn:hover{ transform: translateY(-1px); box-shadow: 0 8px 16px rgba(15,23,42,.08); }
+.ah-btn:active{ transform: translateY(0px); }
+
+.ah-btn.primary{
+  background: var(--btn);
+  border-color: var(--btn);
+  color: #fff;
+}
+.ah-btn.primary:hover{ filter: brightness(1.05); }
+.ah-btn.red{
+  background: var(--red-dark);
+  border-color: var(--red-dark);
+  color: #fff;
+}
+
+.ah-btn.ghost{
+  background: #fff;
+  border-color: var(--border);
+  color: #111827;
+}
+
+/* Forms */
+.ah-form{ display: grid; gap: 12px; }
+.ah-field{ display: grid; gap: 6px; }
+.ah-label{ font-weight: 800; font-size: 13px; }
+.ah-input, .ah-select, .ah-textarea{
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  outline: none;
+  background: #fff;
+}
+.ah-input:focus, .ah-select:focus, .ah-textarea:focus{
+  border-color: rgba(239,47,47,.55);
+  box-shadow: 0 0 0 4px rgba(239,47,47,.14);
+}
+.ah-help{ font-size: 12px; color: var(--muted); }
+.ah-error{
+  font-size: 12px;
+  color: var(--danger-tx);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-bd);
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+/* Badges */
+.ah-badge{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  font-weight: 800;
+  font-size: 12px;
+  color: #111827;
+  background: #fff;
+}
+.ah-badge.success{ background: var(--success-bg); border-color: var(--success-bd); color: var(--success-tx); }
+.ah-badge.warn{ background: var(--warn-bg); border-color: var(--warn-bd); color: var(--warn-tx); }
+.ah-badge.info{ background: var(--info-bg); border-color: var(--info-bd); color: var(--info-tx); }
+.ah-badge.danger{ background: var(--danger-bg); border-color: var(--danger-bd); color: var(--danger-tx); }
+
+/* List rows */
+.ah-row{
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+.ah-row-top{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.ah-row h3{ margin: 0; font-size: 16px; }
+.ah-row p{ margin: 0; color: var(--muted); font-size: 13px; }
+.ah-row-actions{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* Table */
+.ah-table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.ah-table th, .ah-table td{
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: 13px;
+}
+.ah-table th{
+  background: #f9fafb;
+  color: #334155;
+  font-weight: 900;
+}
+.ah-table tr:last-child td{ border-bottom: 0; }
+
+/* Small divider */
+.ah-divider{ height: 1px; background: var(--border); margin: 12px 0; }
+/* =========================
+   FORCE THEME OVERRIDES (keep at bottom)
+   ========================= */
+
+/* Make sure these win even if another stylesheet tries to override them */
+.ah-hero{
+  background: var(--red) !important;
+  color: #fff !important;
+}
+
+.ah-tabs{
+  background: var(--red) !important;
+}
+
+/* Router adds "active" class via routerLinkActive */
+.ah-tab.active{
+  background: #fff !important;
+  color: #111827 !important;
+}
+
+/* Normal tabs should always be white-ish on red */
+.ah-tab{
+  color: rgba(255,255,255,.92) !important;
+}
+
+/* Buttons: ensure text shows (your screenshot had blank pills) */
+button.ah-btn{
+  color: inherit;
+}
+.ah-btn.ghost{
+  background: #fff !important;
+  border-color: var(--border) !important;
+  color: #111827 !important;
+}
+.ah-btn.red{
+  background: var(--red-dark) !important;
+  border-color: var(--red-dark) !important;
+  color: #fff !important;
+}
+
+/* Badges: force colors */
+.ah-badge.success{ background: var(--success-bg) !important; border-color: var(--success-bd) !important; color: var(--success-tx) !important; }
+.ah-badge.warn{ background: var(--warn-bg) !important; border-color: var(--warn-bd) !important; color: var(--warn-tx) !important; }
+.ah-badge.info{ background: var(--info-bg) !important; border-color: var(--info-bd) !important; color: var(--info-tx) !important; }
+.ah-badge.danger{ background: var(--danger-bg) !important; border-color: var(--danger-bd) !important; color: var(--danger-tx) !important; }
+/* FIX TAB TEXT VISIBILITY */
+
+/* Default (non-active) tabs = white text on red */
+.ah-tab {
+  color: #ffffff !important;
+  font-weight: 800;
+}
+
+/* Active tab = dark text on white */
+.ah-tab.active {
+  background: #ffffff !important;
+  color: #111827 !important;
+  font-weight: 900;
+}
+
+/* Ensure links inside tabs don't override color */
+.ah-tab a,
+.ah-tab:link,
+.ah-tab:visited {
+  color: inherit !important;
+  text-decoration: none;
+}
