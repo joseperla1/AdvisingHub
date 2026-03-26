@@ -4,8 +4,8 @@ import { StaffQueueManagementComponent } from './/staff-queue-management/staff-q
 // TEMPORARY startup route switch
 // Change this to 'admin' or 'user/dashboard' depending on which view you want first.
 // Remove this once login-based routing is implemented.
-const DEFAULT_START_ROUTE = 'user/dashboard';
-// const DEFAULT_START_ROUTE = 'admin';
+// const DEFAULT_START_ROUTE = 'user/dashboard';
+const DEFAULT_START_ROUTE = 'admin';
 
 export const routes: Routes = [
   {
