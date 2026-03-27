@@ -3,7 +3,9 @@ const cors = require('cors');
 
 const adminQueueRoutes = require('./routes/adminQueueRoutes');
 const queueRoutes = require('./routes/queueRoutes');
-
+const serviceCatalogRoutes = require('./routes/serviceCatalogRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
+const adminAppointmentRoutes = require('./routes/adminAppointmentRoutes');
 const app = express();
 
 app.use(cors());
@@ -18,6 +20,10 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/admin/queue', adminQueueRoutes);
 app.use('/api/queue', queueRoutes);
+app.use('/api/services', serviceCatalogRoutes);
+app.use('/api/appointments', appointmentRoutes);
+app.use('/api/admin/appointments', adminAppointmentRoutes);
+
 
 // 404 handler
 app.use((req, res) => {
