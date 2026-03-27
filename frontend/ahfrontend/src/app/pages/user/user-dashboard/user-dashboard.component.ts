@@ -93,6 +93,10 @@ export class UserDashboardComponent implements OnInit {
     localStorage.setItem('ah_selectedService', JSON.stringify(service));
     this.router.navigateByUrl('/user/join');
   }
+  goToAppointment(service: ServiceItem): void {
+    localStorage.setItem('selectedAppointmentService', JSON.stringify(service));
+    this.router.navigateByUrl('/user/appointments');
+  }
 
   markAllRead(): void {
     this.notifications = this.notifications.map(n => ({ ...n, type: n.type === 'NEW' ? 'INFO' : n.type }));
