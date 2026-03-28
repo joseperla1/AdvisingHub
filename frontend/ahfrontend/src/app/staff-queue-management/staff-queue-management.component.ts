@@ -7,6 +7,8 @@ import {
   inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { LoginService } from '../login/login.service';
 import { ServicesManagementComponent } from '../services-management/services-management.component';
 import { NotificationStore } from '../notification-store.service';
 import {
@@ -76,6 +78,8 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
   // Auth mock
   isLoggedIn = signal<boolean>(true);
   currentUser = signal<string>('Advisor Smith');
+  private router = inject(Router);
+  private loginService = inject(LoginService);
 
   // Notifications
   toastList = this.notices.toasts;
@@ -302,9 +306,11 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
   }
 
   logout() {
+    this.loginService.logout();
     this.isLoggedIn.set(false);
     this.currentUser.set('');
     this.notices.push('info', 'Logged out', 'You have been signed out.');
+    this.router.navigate(['/login']);
   }
 
   toggleNotifications() {

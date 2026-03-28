@@ -1,0 +1,27 @@
+<div class="register-container">
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="register-form" novalidate>
+    <h2>Create account</h2>
+
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" type="email" formControlName="email" />
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <input id="password" type="password" formControlName="password" />
+    </div>
+
+    <div class="field">
+      <label for="confirmPassword">Confirm password</label>
+      <input id="confirmPassword" type="password" formControlName="confirmPassword" />
+    </div>
+
+    <div *ngIf="error" class="error">{{ error }}</div>
+
+    <div class="actions">
+      <button type="submit" [disabled]="loading">{{ loading ? 'Creating…' : 'Create account' }}</button>
+      <a class="back-link" routerLink="/login">Back to login</a>
+    </div>
+  </form>
+</div>
