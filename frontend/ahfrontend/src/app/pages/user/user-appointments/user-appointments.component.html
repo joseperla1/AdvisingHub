@@ -1,0 +1,95 @@
+<div class="ah-page">
+  <div class="ah-tabs">
+    <a class="ah-tab" routerLink="/user/dashboard">User Dashboard</a>
+    <a class="ah-tab" routerLink="/user/join">Join Queue</a>
+    <a class="ah-tab active" routerLink="/user/appointments">Appointments</a>
+    <a class="ah-tab" routerLink="/user/status">Queue Status</a>
+    <a class="ah-tab" routerLink="/user/history">History</a>
+  </div>
+
+  <div class="ah-hero">
+    <h1>Appointments</h1>
+    <p>Schedule a service for a later date and view your current appointments</p>
+  </div>
+
+  <div class="ah-grid cols-2">
+    <!-- left -->
+    <div class="ah-card">
+      <div class="ah-card-header">
+        <h2>Book Appointment</h2>
+        <small>Select a service and time</small>
+      </div>
+
+      <div class="ah-form-grid">
+        <label class="ah-label">Service</label>
+        <select class="ah-input" [(ngModel)]="form.serviceId" name="serviceId">
+          <option value="">Select a service</option>
+          <option *ngFor="let s of services()" [value]="s.id">
+            {{ s.name }}
+          </option>
+        </select>
+
+        <div class="ah-help" *ngIf="selectedService()">
+          {{ selectedService()?.description }}<br />
+          Expected duration: {{ selectedService()?.expectedDurationMin }} min
+        </div>
+
+        <label class="ah-label">Appointment Date</label>
+        <input class="ah-input" type="date" [(ngModel)]="form.appointmentDate" name="appointmentDate" />
+
+        <label class="ah-label">Appointment Time</label>
+        <input class="ah-input" type="time" [(ngModel)]="form.appointmentTime" name="appointmentTime" />
+
+        <label class="ah-label">Notes</label>
+        <textarea
+          class="ah-input"
+          rows="4"
+          [(ngModel)]="form.notes"
+          name="notes"
+          placeholder="Optional notes"
+        ></textarea>
+
+        <div class="ah-error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+        <div class="ah-success" *ngIf="successMessage()">{{ successMessage() }}</div>
+
+        <div class="ah-row-actions">
+          <button class="ah-btn primary" (click)="submitAppointment()" [disabled]="isLoading()">
+            {{ isLoading() ? 'Scheduling...' : 'Schedule Appointment' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- right -->
+    <div class="ah-card">
+      <div class="ah-card-header">
+        <h2>Current Appointments</h2>
+        <small>{{ appointments().length }} total</small>
+      </div>
+
+      <div *ngIf="appointments().length === 0" class="ah-help">
+        No appointments scheduled.
+      </div>
+
+      <div class="ah-grid" *ngIf="appointments().length > 0">
+        <div class="ah-row" *ngFor="let a of appointments()">
+          <div class="ah-row-top">
+            <div>
+              <h3>{{ a.serviceName }}</h3>
+              <p><b>Date:</b> {{ a.appointmentDate }}</p>
+              <p><b>Time:</b> {{ a.appointmentTime }}</p>
+              <p><b>Advisor:</b> {{ a.advisor }}</p>
+              <p><b>Queue Position:</b> {{ a.queuePosition ?? '—' }}</p>
+            </div>
+
+            <span class="ah-badge" [ngClass]="badgeClass(a.status)">
+              {{ a.status }}
+            </span>
+          </div>
+
+          <p *ngIf="a.notes"><b>Notes:</b> {{ a.notes }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

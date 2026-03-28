@@ -1,0 +1,122 @@
+.ah-page{
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px 16px 40px;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.ah-tabs{
+  background: #ef2f2f;
+  border-radius: 999px;
+  padding: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  margin-bottom: 18px;
+}
+.ah-tab{
+  flex: 1;
+  text-align: center;
+  padding: 12px 10px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(255,255,255,.92);
+}
+.ah-tab.active{
+  background: #fff;
+  color: #111827;
+}
+
+.ah-hero{
+  background: #ef2f2f;
+  border-radius: 22px;
+  padding: 26px 18px;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.ah-card{
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  padding: 16px;
+}
+
+.ah-card-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ah-grid{ display: grid; gap: 14px; }
+@media (min-width: 980px){
+  .ah-grid.cols-2{ grid-template-columns: 1fr 1fr; }
+}
+
+.ah-row{
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.ah-row-top{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.ah-btn{
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.ah-btn.primary{
+  background: #0b1220;
+  border-color: #0b1220;
+  color: #fff;
+}
+
+.ah-badge{
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  font-weight: 800;
+  font-size: 12px;
+  background: #fff;
+  white-space: nowrap;
+}
+.ah-badge.info{ background: #eef4ff; border-color: #c6d4ff; color: #1d4ed8; }
+.ah-badge.success{ background: #eafaf1; border-color: #bde9cf; color: #16794c; }
+.ah-badge.warn{ background: #fff7e6; border-color: #ffe0a3; color: #8a5a00; }
+.ah-badge.danger{ background: #fff1f2; border-color: #fecdd3; color: #9f1239; }
+
+.ah-help{ color: #667085; font-size: 13px; }
+.ah-row-actions{ display: flex; gap: 10px; justify-content: flex-end; }
+.ah-form-grid{ display: grid; gap: 10px; }
+.ah-label{ font-weight: 700; font-size: 13px; }
+.ah-input{
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+}
+.ah-error{ color: #b42318; font-weight: 700; font-size: 13px; }
+.ah-success{ color: #16794c; font-weight: 700; font-size: 13px; }
