@@ -6,6 +6,7 @@ const queueRoutes = require('./routes/queueRoutes');
 const serviceCatalogRoutes = require('./routes/serviceCatalogRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const adminAppointmentRoutes = require('./routes/adminAppointmentRoutes');
+const historyRoutes = require('./routes/historyRoutes');
 const app = express();
 
 app.use(cors());
@@ -23,6 +24,7 @@ app.use('/api/queue', queueRoutes);
 app.use('/api/services', serviceCatalogRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/admin/appointments', adminAppointmentRoutes);
+app.use('/api/history', historyRoutes);
 
 
 // 404 handler
