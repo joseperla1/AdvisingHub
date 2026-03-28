@@ -299,12 +299,7 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
     this.notices.push('success', 'Logged in', 'You are now signed in as Advisor Smith.');
   }
 
-<<<<<<< HEAD
-  logout() {
-    this.loginService.logout();
-=======
   logout(): void {
->>>>>>> 9b29fe0da48cb12e086a5c125ef233a3ad83ca61
     this.isLoggedIn.set(false);
     this.currentUser.set('');
     this.notices.push('info', 'Logged out', 'You have been signed out.');
