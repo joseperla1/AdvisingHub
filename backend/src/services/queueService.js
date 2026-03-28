@@ -2,6 +2,7 @@ const queueRepository = require('../repositories/queueRepository');
 const { httpError } = require('../utils/httpError');
 const { generateQueueId } = require('../utils/idGenerator');
 const { validateJoinQueuePayload } = require('../validators/queueValidators');
+const notificationService = require('./notificationService');
 
 class QueueService {
   getPriorityRank(priority) {
@@ -95,7 +96,25 @@ class QueueService {
       status: createdQueueItem.status
     });
 
-    return createdQueueItem;
+    let user = { id: payload.userId, name: payload.name };
+    try {
+      const userService = require('./user.service');
+      const foundUser = userService.findUserById(payload.userId);
+      if (foundUser) user = foundUser;
+    } catch (e) {
+      /* fallback to payload */
+    }
+
+    const allQueue = await this.getCurrentQueue();
+    const position = allQueue.findIndex(q => q.id === createdQueueItem.id) + 1;
+
+    const notification = notificationService.notifyQueueJoined(
+      user,
+      createdQueueItem,
+      position
+    );
+
+    return { queueItem: createdQueueItem, notification };
   }
 
   async leaveQueue(queueId) {
@@ -142,6 +161,21 @@ class QueueService {
 
     const sortedWaitingItems = this.sortQueue(waitingItems);
     const nextUser = sortedWaitingItems[0];
+
+    for (let i = 0; i < Math.min(2, sortedWaitingItems.length); i++) {
+      const queueItem = sortedWaitingItems[i];
+
+      let user = { id: queueItem.userId, name: queueItem.name };
+      try {
+        const userService = require('./user.service');
+        const foundUser = userService.findUserById(queueItem.userId);
+        if (foundUser) user = foundUser;
+      } catch (e) {
+        /* fallback to queueItem */
+      }
+
+      notificationService.notifyAlmostReady(user, queueItem, i + 1);
+    }
 
     const updated = await queueRepository.updateById(nextUser.id, {
       status: 'serving'
