@@ -11,6 +11,16 @@ const DEFAULT_START_ROUTE = 'admin';
 
 export const routes: Routes = [
   {
+    path: 'login',
+    loadComponent: () =>
+      import('./login/login.component').then(m => m.LoginComponent)
+  },
+  {
+    path: 'registration',
+    loadComponent: () =>
+      import('./registration/registration.component').then(m => m.RegistrationComponent)
+  },
+  {
     path: 'admin',
     component: StaffQueueManagementComponent
   },
@@ -26,6 +36,7 @@ export const routes: Routes = [
       import('./pages/user/user-dashboard/user-dashboard.component')
         .then(m => m.UserDashboardComponent)
   },
+
 
   {
     path: 'user/join',
