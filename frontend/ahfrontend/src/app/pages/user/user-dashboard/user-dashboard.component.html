@@ -7,6 +7,9 @@
     <p>View your ticket, join a service, and track updates</p>
   </div>
 
+  <p *ngIf="servicesLoadError" style="color:#b91c1c;font-weight:600;margin:0 0 8px;">{{ servicesLoadError }}</p>
+  <p *ngIf="queueLoadError" style="color:#b91c1c;font-weight:600;margin:0 0 8px;">{{ queueLoadError }}</p>
+
   <!-- TOP STATS GRID -->
   <div class="ah-grid cols-3">
     <div class="ah-stat">
@@ -91,8 +94,8 @@
             View Status
           </button>
 
-          <button class="ah-btn red" (click)="leaveQueue()">
-            Leave Queue
+          <button class="ah-btn red" (click)="leaveQueue()" [disabled]="leavingQueue">
+            {{ leavingQueue ? 'Leaving…' : 'Leave Queue' }}
           </button>
         </div>
       </div>

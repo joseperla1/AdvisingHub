@@ -70,7 +70,7 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
 
   // Auth mock
   isLoggedIn = signal<boolean>(true);
-  currentUser = signal<string>('Advisor Smith');
+  currentUser = signal<string>('Admin Smith');
   private router = inject(Router);
   private loginService = inject(LoginService);
 
@@ -122,6 +122,10 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    const storedName = localStorage.getItem('userName');
+    if (storedName) {
+      this.currentUser.set(storedName);
+    }
     this.timerId = window.setInterval(() => this.now.set(new Date()), 1000);
     this.loadQueue();
   }
@@ -295,8 +299,8 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
 
   login(): void {
     this.isLoggedIn.set(true);
-    this.currentUser.set('Advisor Smith');
-    this.notices.push('success', 'Logged in', 'You are now signed in as Advisor Smith.');
+    this.currentUser.set('Admin Smith');
+    this.notices.push('success', 'Logged in', 'You are now signed in as Admin Smith.');
   }
 
   logout(): void {
@@ -376,6 +380,8 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
       case 'serving':
         return 'Being Served';
       case 'served':
+        return 'Completed';
+      case 'left':
         return 'Completed';
       case 'no-show':
         return 'No Show';

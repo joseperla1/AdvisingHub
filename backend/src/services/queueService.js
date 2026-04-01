@@ -1,4 +1,5 @@
 const queueRepository = require('../repositories/queueRepository');
+const serviceRepository = require('../repositories/serviceRepository');
 const { httpError } = require('../utils/httpError');
 const { generateQueueId } = require('../utils/idGenerator');
 const { validateJoinQueuePayload } = require('../validators/queueValidators');
@@ -36,6 +37,34 @@ class QueueService {
     return this.sortQueue(activeItems);
   }
 
+  /** Active queue row for a user (waiting or serving), with computed position and ETA minutes. */
+  async getActiveQueueEntryForUser(userId) {
+    if (!userId || typeof userId !== 'string') {
+      throw httpError(400, 'userId is required.');
+    }
+
+    const items = await queueRepository.findAll();
+    const item = items.find(
+      i => i.userId === userId && (i.status === 'waiting' || i.status === 'serving')
+    );
+
+    if (!item) {
+      return null;
+    }
+
+    const sorted = await this.getCurrentQueue();
+    const position = sorted.findIndex(q => q.id === item.id) + 1;
+    const service = await serviceRepository.findById(item.serviceId);
+    const estimatedWaitMin =
+      service?.expectedDurationMin ?? service?.expectedDuration ?? 20;
+
+    return {
+      queueItem: item,
+      position,
+      estimatedWaitMin,
+    };
+  }
+
   async joinQueue(payload) {
     const validationErrors = validateJoinQueuePayload(payload);
     if (validationErrors.length > 0) {
@@ -70,6 +99,11 @@ class QueueService {
       throw httpError(409, 'Student is already in the queue.');
     }
 
+    const notes =
+      typeof payload.notes === 'string' && payload.notes.trim().length > 0
+        ? payload.notes.trim().slice(0, 500)
+        : undefined;
+
     const newQueueItem = {
       id: generateQueueId(),
       userId: normalizedUserId,
@@ -79,7 +113,8 @@ class QueueService {
       serviceName: normalizedServiceName,
       priority: payload.priority || 'normal',
       status: 'waiting',
-      joinedAt: new Date().toISOString()
+      joinedAt: new Date().toISOString(),
+      ...(notes ? { notes } : {}),
     };
 
     const createdQueueItem = await queueRepository.create(newQueueItem);
@@ -108,13 +143,22 @@ class QueueService {
     const allQueue = await this.getCurrentQueue();
     const position = allQueue.findIndex(q => q.id === createdQueueItem.id) + 1;
 
+    const service = await serviceRepository.findById(normalizedServiceId);
+    const estimatedWaitMin =
+      service?.expectedDurationMin ?? service?.expectedDuration ?? 20;
+
     const notification = notificationService.notifyQueueJoined(
       user,
       createdQueueItem,
       position
     );
 
-    return { queueItem: createdQueueItem, notification };
+    return {
+      queueItem: createdQueueItem,
+      notification,
+      position,
+      estimatedWaitMin,
+    };
   }
 
   async leaveQueue(queueId) {

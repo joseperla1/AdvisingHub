@@ -1,96 +1,61 @@
 const bcrypt = require('bcryptjs');
+const { buildSeedUsers } = require('../data/usersSeed');
 
-// In-memory storage (no database yet)
-let users = [
-  {
-    id: '1',
-    email: 'admin@example.com',
-    passwordHash: bcrypt.hashSync('password', 10),
-    name: 'Admin User',
-    role: 'admin'
-  },
-  {
-    id: '2',
-    email: 'admin2@example.com',
-    passwordHash: bcrypt.hashSync('password', 10),
-    name: 'Admin User 2',
-    role: 'admin'
-  },
-  {
-    id: '3',
-    email: 'admin3@example.com',
-    passwordHash: bcrypt.hashSync('password', 10),
-    name: 'Admin User 3',
-    role: 'admin'
-  },
-  {
-    id: '4',
-    email: 'user@example.com',
-    passwordHash: bcrypt.hashSync('password', 10),
-    name: 'Regular User',
-    role: 'user'
-  },
-  {
-    id: '5',
-    email: 'user2@example.com',
-    passwordHash: bcrypt.hashSync('password', 10),
-    name: 'Regular User 2',
-    role: 'user'
-  },
-  {
-    id: '6',
-    email: 'user3@example.com',
-    passwordHash: bcrypt.hashSync('password', 10),
-    name: 'Regular User 3',
-    role: 'user'
-  }
-];
+let users = buildSeedUsers();
 
-let nextUserId = 7;
+function nextUserId() {
+  const numeric = users
+    .map(u => /^u(\d+)$/.exec(u.id))
+    .filter(Boolean)
+    .map(m => parseInt(m[1], 10));
+  const max = numeric.length ? Math.max(...numeric) : 100;
+  return `u${max + 1}`;
+}
 
 const userService = {
-  // Find user by email
   findUserByEmail: (email) => {
-    return users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    return users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
   },
 
-  // Find user by ID
   findUserById: (id) => {
     return users.find(u => u.id === id);
   },
 
-  // Create new user
+  /** First admin (default appointment advisor). */
+  getDefaultAdvisor: () => {
+    return users.find(u => u.role === 'admin') || null;
+  },
+
   createUser: (userData) => {
     const passwordHash = bcrypt.hashSync(userData.password, 10);
     const newUser = {
-      id: String(nextUserId++),
-      email: userData.email,
+      id: nextUserId(),
+      email: String(userData.email).toLowerCase(),
       passwordHash,
       name: userData.name || userData.email,
-      role: userData.role || 'user'
+      role: userData.role === 'admin' ? 'admin' : 'user',
+      studentId: userData.studentId || null,
     };
     users.push(newUser);
     return newUser;
   },
 
-  // Get all users (for admin purposes)
   getAllUsers: () => {
     return users.map(u => ({
       id: u.id,
       email: u.email,
       name: u.name,
-      role: u.role
+      role: u.role,
+      studentId: u.studentId ?? null,
     }));
   },
 
-  // Update user
   updateUser: (id, updates) => {
     const user = users.find(u => u.id === id);
     if (!user) return null;
-    
     Object.assign(user, updates);
     return user;
-  }
+  },
 };
 
 module.exports = userService;

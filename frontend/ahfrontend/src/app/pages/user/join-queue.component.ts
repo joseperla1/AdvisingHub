@@ -2,28 +2,10 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LS_ACTIVE_TICKET, readStoredActiveTicket } from './queue-local-storage';
 import { UserNavComponent } from './user-nav/user-nav.component';
-
-type QueueStatus = 'waiting' | 'almost_ready' | 'served' | 'left';
-
-interface ServiceItem {
-  id: string;
-  name: string;
-  avgWaitMins: number;
-}
-
-interface ActiveTicket {
-  ticketId: string;
-  serviceId: string;
-  serviceName: string;
-  notes?: string;
-  status: QueueStatus;
-  position: number;
-  estimatedWaitMins: number;
-  createdAtISO: string;
-  updatedAtISO: string;
-}
+import { LoginService } from '../../login/login.service';
+import { ServiceCatalogApiService, ServiceCatalogItem } from '../../services/service-catalog-api.service';
+import { UserQueueApiService } from '../../services/user-queue-api.service';
 
 @Component({
   selector: 'app-join-queue',
@@ -33,22 +15,21 @@ interface ActiveTicket {
   styleUrls: ['./join-queue.component.css'],
 })
 export class JoinQueueComponent implements OnInit {
-  services: ServiceItem[] = [
-    { id: 'gen', name: 'General Advising', avgWaitMins: 25 },
-    { id: 'cs', name: 'Computer Science Advising', avgWaitMins: 35 },
-    { id: 'fin', name: 'Financial Aid Support', avgWaitMins: 20 },
-    { id: 'reg', name: 'Registration Help', avgWaitMins: 15 },
-  ];
-
-  activeTicket = signal<ActiveTicket | null>(null);
+  services = signal<ServiceCatalogItem[]>([]);
+  activeQueueId = signal<string | null>(null);
   submitting = signal(false);
   submitError = signal<string | null>(null);
+  loadError = signal<string | null>(null);
 
-  // ✅ FIX: do NOT initialize with this.fb here
   form: FormGroup;
 
-  constructor(private fb: FormBuilder, private router: Router) {
-    // ✅ FIX: initialize in constructor
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private login: LoginService,
+    private catalogApi: ServiceCatalogApiService,
+    private queueApi: UserQueueApiService
+  ) {
     this.form = this.fb.group({
       serviceId: ['', Validators.required],
       notes: ['', [Validators.maxLength(300)]],
@@ -56,27 +37,53 @@ export class JoinQueueComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.activeTicket.set(this.readActiveTicket());
+    this.catalogApi.getServices().subscribe({
+      next: res => {
+        this.services.set(res.data ?? []);
+        this.loadError.set(null);
+      },
+      error: () => this.loadError.set('Could not load services from the server.'),
+    });
+
+    const uid = this.login.getUserId();
+    if (uid) {
+      this.queueApi.getActive(uid).subscribe({
+        next: res => {
+          const id = res.data?.queueItem?.id ?? null;
+          this.activeQueueId.set(id);
+        },
+        error: () => this.activeQueueId.set(null),
+      });
+    }
   }
 
   get f() {
-    return this.form.controls as any;
+    return this.form.controls as Record<string, unknown>;
   }
 
-  get selectedService(): ServiceItem | undefined {
+  get selectedService(): ServiceCatalogItem | undefined {
     const id = this.form.value['serviceId'] || '';
-    return this.services.find(s => s.id === id);
+    return this.services().find(s => s.id === id);
   }
 
   get hasActiveTicket(): boolean {
-    return !!this.activeTicket();
+    return !!this.activeQueueId();
   }
 
   joinQueue(): void {
     this.submitError.set(null);
 
+    const uid = this.login.getUserId();
+    const name = this.login.getUserName();
+    if (!uid || !name) {
+      this.submitError.set('You must be signed in to join the queue.');
+      return;
+    }
+
     if (this.hasActiveTicket) {
-      this.submitError.set('You already have an active ticket. Please view Queue Status or leave the queue first.');
+      this.submitError.set(
+        'You already have an active ticket. View Queue Status or leave the queue first.'
+      );
       return;
     }
 
@@ -91,66 +98,31 @@ export class JoinQueueComponent implements OnInit {
       return;
     }
 
+    const studentId = this.login.getStudentId() || uid;
+    const notesRaw = (this.form.value['notes'] || '').trim();
+
     this.submitting.set(true);
 
-    try {
-      const now = new Date();
-      const notesRaw = (this.form.value['notes'] || '').trim();
-
-      const ticket: ActiveTicket = {
-        ticketId: this.generateTicketId(),
+    this.queueApi
+      .joinQueue({
+        userId: uid,
+        name,
+        studentId,
         serviceId: service.id,
         serviceName: service.name,
+        priority: service.priority || 'normal',
         notes: notesRaw || undefined,
-        status: 'waiting',
-        position: this.randomPosition(),
-        estimatedWaitMins: this.randomWait(service.avgWaitMins),
-        createdAtISO: now.toISOString(),
-        updatedAtISO: now.toISOString(),
-      };
-
-      localStorage.setItem(LS_ACTIVE_TICKET, JSON.stringify(ticket));
-
-      this.activeTicket.set(ticket);
-      this.form.reset({ serviceId: '', notes: '' });
-
-      this.router.navigateByUrl('/user/status');
-    } catch {
-      this.submitError.set('Something went wrong. Please try again.');
-    } finally {
-      this.submitting.set(false);
-    }
-  }
-
-  private readActiveTicket(): ActiveTicket | null {
-    const s = readStoredActiveTicket();
-    if (!s) return null;
-    return {
-      ticketId: s.ticketId,
-      serviceId: s.serviceId,
-      serviceName: s.serviceName,
-      notes: s.notes,
-      status: s.status as QueueStatus,
-      position: s.position,
-      estimatedWaitMins: s.estimatedWaitMins,
-      createdAtISO: s.createdAtISO,
-      updatedAtISO: s.updatedAtISO,
-    };
-  }
-
-  private generateTicketId(): string {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let out = 'AH-';
-    for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
-    return out;
-  }
-
-  private randomPosition(): number {
-    return Math.floor(Math.random() * 18) + 2;
-  }
-
-  private randomWait(base: number): number {
-    const jitter = Math.floor(Math.random() * 11) - 5;
-    return Math.max(5, base + jitter);
+      })
+      .subscribe({
+        next: () => {
+          this.form.reset({ serviceId: '', notes: '' });
+          this.submitting.set(false);
+          void this.router.navigateByUrl('/user/status');
+        },
+        error: err => {
+          this.submitting.set(false);
+          this.submitError.set(err?.error?.error || 'Could not join the queue.');
+        },
+      });
   }
 }

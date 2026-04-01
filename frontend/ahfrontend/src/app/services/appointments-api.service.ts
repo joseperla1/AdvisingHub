@@ -11,6 +11,8 @@ export type AppointmentStatus =
 
 export interface AppointmentItem {
   id: string;
+  userId?: string;
+  advisorId?: string;
   studentName: string;
   studentId: string;
   serviceId: string;
@@ -24,6 +26,7 @@ export interface AppointmentItem {
 }
 
 export interface CreateAppointmentPayload {
+  userId?: string;
   studentName: string;
   studentId: string;
   serviceId: string;

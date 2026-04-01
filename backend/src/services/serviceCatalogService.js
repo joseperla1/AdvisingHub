@@ -1,32 +1,37 @@
-// backend/src/services/serviceCatalogService.js
 const { services } = require('../data/servicesStores');
 
-class ServiceRepository {
-  constructor() {
-    this.services = services;
-    this.services.forEach(s => {
-      if (!s.queue) s.queue = [];
-    });
-  }
+function ensureQueueArrays() {
+  services.forEach(s => {
+    if (!s.queue) s.queue = [];
+  });
+}
 
+ensureQueueArrays();
+
+class ServiceCatalogService {
   async findAll() {
-    return [...this.services];
+    return [...services];
   }
 
   async findById(id) {
-    return this.services.find(s => s.id === id) || null;
+    return services.find(s => s.id === id) || null;
   }
 
   async create(serviceData) {
+    const duration =
+      serviceData.expectedDuration ??
+      serviceData.expectedDurationMin ??
+      15;
+    const prio = serviceData.priority || 'normal';
     const newService = {
-      id: `svc${this.services.length + 1}`,
+      id: `svc_${Date.now()}`,
       name: serviceData.name,
       description: serviceData.description || '',
-      expectedDuration: serviceData.expectedDuration ?? 15,
-      priority: serviceData.priority || 'normal',
-      queue: []
+      expectedDurationMin: duration,
+      priority: prio === 'medium' ? 'normal' : prio,
+      queue: [],
     };
-    this.services.push(newService);
+    services.push(newService);
     return newService;
   }
 
@@ -34,22 +39,28 @@ class ServiceRepository {
     const service = await this.findById(id);
     if (!service) return null;
 
+    const duration =
+      updateData.expectedDuration ??
+      updateData.expectedDurationMin ??
+      service.expectedDurationMin;
+
+    const nextPrio = updateData.priority ?? service.priority;
     Object.assign(service, {
       name: updateData.name ?? service.name,
       description: updateData.description ?? service.description,
-      expectedDuration: updateData.expectedDuration ?? service.expectedDuration,
-      priority: updateData.priority ?? service.priority
+      expectedDurationMin: duration,
+      priority: nextPrio === 'medium' ? 'normal' : nextPrio,
     });
 
     return service;
   }
 
   async removeService(id) {
-    const index = this.services.findIndex(s => s.id === id);
+    const index = services.findIndex(s => s.id === id);
     if (index === -1) return false;
-    this.services.splice(index, 1);
+    services.splice(index, 1);
     return true;
   }
 }
 
-module.exports = new ServiceRepository();
+module.exports = new ServiceCatalogService();

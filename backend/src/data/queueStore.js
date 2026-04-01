@@ -1,3 +1,6 @@
+/**
+ * Initial queue rows — userId / studentId match usersSeed and services match servicesStores.
+ */
 const queueItems = [
   {
     id: 'q1',
@@ -8,7 +11,7 @@ const queueItems = [
     serviceName: 'Transcript Request',
     priority: 'normal',
     status: 'waiting',
-    joinedAt: '2026-03-24T18:00:00.000Z'
+    joinedAt: '2026-03-24T18:00:00.000Z',
   },
   {
     id: 'q2',
@@ -16,10 +19,10 @@ const queueItems = [
     name: 'Ariana M.',
     studentId: 'STU002',
     serviceId: 'svc2',
-    serviceName: 'Add/Drop',
+    serviceName: 'Enrollment Verification',
     priority: 'high',
     status: 'waiting',
-    joinedAt: '2026-03-24T18:05:00.000Z'
+    joinedAt: '2026-03-24T18:05:00.000Z',
   },
   {
     id: 'q3',
@@ -30,10 +33,10 @@ const queueItems = [
     serviceName: 'Graduation Check',
     priority: 'low',
     status: 'waiting',
-    joinedAt: '2026-03-24T18:10:00.000Z'
-  }
+    joinedAt: '2026-03-24T18:10:00.000Z',
+  },
 ];
 
 module.exports = {
-  queueItems
+  queueItems,
 };

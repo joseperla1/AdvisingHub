@@ -11,6 +11,7 @@ interface LoginResponse {
     email: string;
     role: 'user' | 'admin';
     name: string;
+    studentId?: string | null;
   };
   message?: string;
 }
@@ -23,6 +24,7 @@ interface RegisterResponse {
     email: string;
     role: 'user' | 'admin';
     name: string;
+    studentId?: string | null;
   };
   message?: string;
 }
@@ -40,10 +42,7 @@ export class LoginService {
       );
 
       if (response.success && response.token && response.user) {
-        // Store token and user info
-        localStorage.setItem('authToken', response.token);
-        localStorage.setItem('userRole', response.user.role);
-        localStorage.setItem('userId', response.user.id);
+        this.persistSession(response.token, response.user);
       }
 
       return response;
@@ -62,10 +61,7 @@ export class LoginService {
       );
 
       if (response.success && response.token && response.user) {
-        // Store token and user info
-        localStorage.setItem('authToken', response.token);
-        localStorage.setItem('userRole', response.user.role);
-        localStorage.setItem('userId', response.user.id);
+        this.persistSession(response.token, response.user);
       }
 
       return response;
@@ -81,7 +77,46 @@ export class LoginService {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userRole');
     localStorage.removeItem('userId');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('studentId');
+    localStorage.removeItem('userEmail');
     clearAllQueueLocalState();
+  }
+
+  getUserId(): string | null {
+    return localStorage.getItem('userId');
+  }
+
+  getUserName(): string | null {
+    return localStorage.getItem('userName');
+  }
+
+  /** Campus student ID when present; otherwise null (e.g. some admin accounts). */
+  getStudentId(): string | null {
+    const s = localStorage.getItem('studentId');
+    return s && s.length > 0 ? s : null;
+  }
+
+  private persistSession(
+    token: string,
+    user: {
+      id: string;
+      email: string;
+      role: 'user' | 'admin';
+      name: string;
+      studentId?: string | null;
+    }
+  ): void {
+    localStorage.setItem('authToken', token);
+    localStorage.setItem('userRole', user.role);
+    localStorage.setItem('userId', user.id);
+    localStorage.setItem('userName', user.name);
+    localStorage.setItem('userEmail', user.email);
+    if (user.studentId) {
+      localStorage.setItem('studentId', user.studentId);
+    } else {
+      localStorage.removeItem('studentId');
+    }
   }
 
   getToken(): string | null {

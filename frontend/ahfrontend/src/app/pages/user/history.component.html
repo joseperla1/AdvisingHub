@@ -8,6 +8,10 @@
     <p>Review your past queue tickets and outcomes.</p>
   </section>
 
+  <p *ngIf="loadError" style="color:#b91c1c;font-weight:700;margin:0 0 12px;">
+    {{ loadError }}
+  </p>
+
   <!-- Header -->
   <div class="ah-card">
     <div class="ah-card-header">
@@ -19,7 +23,6 @@
 
       <div style="display:flex; gap:10px; align-items:center;">
         <button class="ah-btn ghost" type="button" (click)="refresh()">Refresh</button>
-        <button class="ah-btn red" type="button" (click)="clearHistory()" [disabled]="!hasItems()">Clear</button>
       </div>
     </div>
   </div>

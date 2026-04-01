@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { UserNavComponent } from '../user-nav/user-nav.component';
-import {
-  leaveQueueAndRecordHistory,
-  readStoredActiveTicket,
-} from '../queue-local-storage';
+import { LoginService } from '../../../login/login.service';
+import { ServiceCatalogApiService } from '../../../services/service-catalog-api.service';
+import { UserQueueApiService } from '../../../services/user-queue-api.service';
 
 type TicketStatus = 'Waiting' | 'Almost Ready' | 'Served' | 'Left';
 
@@ -41,31 +40,27 @@ interface ActiveTicket {
 export class UserDashboardComponent implements OnInit, OnDestroy {
   activeTicket: ActiveTicket | null = null;
   services: ServiceItem[] = [];
+  servicesLoadError: string | null = null;
+  queueLoadError: string | null = null;
+  leavingQueue = false;
   notifications: UserNotification[] = [];
   private navSub?: Subscription;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private login: LoginService,
+    private catalogApi: ServiceCatalogApiService,
+    private queueApi: UserQueueApiService
+  ) {}
 
   ngOnInit(): void {
-    this.refreshActiveTicketFromStore();
-
-    this.services =
-      this.safeParse<ServiceItem[]>('services', []) ??
-      this.safeParse<ServiceItem[]>('ah_services_simple', []) ??
-      [];
+    this.loadServicesFromApi();
+    this.refreshActiveFromApi();
 
     this.notifications =
       this.safeParse<UserNotification[]>('notifications', []) ??
       this.safeParse<UserNotification[]>('ah_notifications_simple', []) ??
       [];
-
-    if (!this.services.length) {
-      this.services = [
-        { id: 'svc1', name: 'General Advising', description: 'Course planning, registration help, holds.', avgMinutes: 20 },
-        { id: 'svc2', name: 'Graduation Check', description: 'Degree audit + graduation readiness.', avgMinutes: 30 },
-        { id: 'svc3', name: 'Major Change', description: 'Requirements + eligibility discussion.', avgMinutes: 25 },
-      ];
-    }
 
     if (!this.notifications.length) {
       this.notifications = [
@@ -79,7 +74,8 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe(() => {
         if (this.router.url.split('?')[0] === '/user/dashboard') {
-          this.refreshActiveTicketFromStore();
+          this.loadServicesFromApi();
+          this.refreshActiveFromApi();
         }
       });
   }
@@ -88,8 +84,55 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
     this.navSub?.unsubscribe();
   }
 
-  private refreshActiveTicketFromStore(): void {
-    this.activeTicket = this.loadActiveTicketFromStore();
+  private loadServicesFromApi(): void {
+    this.servicesLoadError = null;
+    this.catalogApi.getServices().subscribe({
+      next: res => {
+        const list = res.data ?? [];
+        this.services = list.map(s => ({
+          id: s.id,
+          name: s.name,
+          description: s.description,
+          avgMinutes: s.expectedDurationMin,
+        }));
+      },
+      error: () => {
+        this.services = [];
+        this.servicesLoadError = 'Could not load services from the server.';
+      },
+    });
+  }
+
+  private refreshActiveFromApi(): void {
+    const uid = this.login.getUserId();
+    if (!uid) {
+      this.activeTicket = null;
+      this.queueLoadError = null;
+      return;
+    }
+
+    this.queueLoadError = null;
+    this.queueApi.getActive(uid).subscribe({
+      next: res => {
+        const d = res.data;
+        if (!d?.queueItem) {
+          this.activeTicket = null;
+          return;
+        }
+        const q = d.queueItem;
+        this.activeTicket = {
+          serviceName: q.serviceName,
+          ticketId: q.id,
+          status: this.mapApiStatusToDisplay(q.status),
+          position: d.position,
+          estimatedWait: d.estimatedWaitMin,
+        };
+      },
+      error: () => {
+        this.activeTicket = null;
+        this.queueLoadError = 'Could not load your queue status.';
+      },
+    });
   }
 
   get notificationsTop5(): UserNotification[] {
@@ -101,6 +144,7 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
     localStorage.setItem('ah_selectedService', JSON.stringify(service));
     this.router.navigateByUrl('/user/join');
   }
+
   goToAppointment(service: ServiceItem): void {
     localStorage.setItem('selectedAppointmentService', JSON.stringify(service));
     this.router.navigateByUrl('/user/appointments');
@@ -112,50 +156,64 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
   }
 
   leaveQueue(): void {
-    leaveQueueAndRecordHistory('left');
-    this.refreshActiveTicketFromStore();
+    const qid = this.activeTicket?.ticketId;
+    if (!qid || this.leavingQueue) return;
 
-    this.notifications.unshift({ type: 'INFO', message: 'You left the queue.', time: this.nowTime() });
-    localStorage.setItem('notifications', JSON.stringify(this.notifications));
+    this.leavingQueue = true;
+    this.queueApi.leaveQueue(qid).subscribe({
+      next: () => {
+        this.leavingQueue = false;
+        this.refreshActiveFromApi();
+        this.notifications.unshift({ type: 'INFO', message: 'You left the queue.', time: this.nowTime() });
+        localStorage.setItem('notifications', JSON.stringify(this.notifications));
+      },
+      error: () => {
+        this.leavingQueue = false;
+        this.notifications.unshift({
+          type: 'ALERT',
+          message: 'Could not leave the queue. Try again from Queue Status.',
+          time: this.nowTime(),
+        });
+        localStorage.setItem('notifications', JSON.stringify(this.notifications));
+      },
+    });
   }
 
   badgeClassForStatus(status: string): string {
     switch (status) {
-      case 'Served': return 'success';
-      case 'Almost Ready': return 'warn';
-      case 'Waiting': return 'info';
-      case 'Left': return 'danger';
-      default: return 'info';
+      case 'Served':
+        return 'success';
+      case 'Almost Ready':
+        return 'warn';
+      case 'Waiting':
+        return 'info';
+      case 'Left':
+        return 'danger';
+      default:
+        return 'info';
     }
   }
 
   badgeClassForNotif(type?: string): string {
     switch (type) {
-      case 'ALERT': return 'danger';
-      case 'NEW': return 'info';
-      case 'INFO': return 'success';
-      default: return 'info';
+      case 'ALERT':
+        return 'danger';
+      case 'NEW':
+        return 'info';
+      case 'INFO':
+        return 'success';
+      default:
+        return 'info';
     }
   }
 
-  private loadActiveTicketFromStore(): ActiveTicket | null {
-    const s = readStoredActiveTicket();
-    if (!s) return null;
-    return {
-      serviceName: s.serviceName,
-      ticketId: s.ticketId,
-      status: this.mapStoredStatusToDisplay(s.status),
-      position: s.position,
-      estimatedWait: s.estimatedWaitMins,
-    };
-  }
-
-  private mapStoredStatusToDisplay(status: string): TicketStatus {
+  private mapApiStatusToDisplay(status: string): TicketStatus {
     const key = (status || 'waiting').toLowerCase();
     const map: Record<string, TicketStatus> = {
       waiting: 'Waiting',
       almost_ready: 'Almost Ready',
       ready: 'Almost Ready',
+      serving: 'Almost Ready',
       served: 'Served',
       left: 'Left',
       canceled: 'Left',
@@ -176,25 +234,21 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
   private nowTime(): string {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
-    // Fix: copy button
+
   copyTicketId(): void {
     const id = this.activeTicket?.ticketId;
     if (!id) return;
-
     navigator.clipboard?.writeText(id).catch(() => {});
   }
 
-  // Fix: dismiss notification button
-  dismissNotification(n: any): void {
+  dismissNotification(n: UserNotification): void {
     this.notifications = (this.notifications || []).filter(x => x !== n);
   }
 
-  // Fix: message admin button
   messageAdmin(): void {
     alert('Message sent to admin (mock)');
   }
 
-  // Fix: view service info button
   viewServiceInfo(serviceName: string): void {
     alert(`Viewing info for ${serviceName || 'service'}`);
   }

@@ -9,6 +9,10 @@
 
   <div class="ah-card">
 
+    <div *ngIf="loadError()" class="ah-alert ah-alert--error">
+      {{ loadError() }}
+    </div>
+
     <div *ngIf="submitError()" class="ah-alert ah-alert--error">
       {{ submitError() }}
     </div>
@@ -19,8 +23,8 @@
         <label>Service</label>
         <select formControlName="serviceId" class="ah-select">
           <option value="">Select a service...</option>
-          <option *ngFor="let s of services" [value]="s.id">
-            {{ s.name }} • Avg {{ s.avgWaitMins }} min
+          <option *ngFor="let s of services()" [value]="s.id">
+            {{ s.name }} • ~{{ s.expectedDurationMin }} min
           </option>
         </select>
       </div>
