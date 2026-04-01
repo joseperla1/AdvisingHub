@@ -3,11 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-<<<<<<< HEAD
     "dev": "nodemon src/server.js",
-=======
-    "dev":"nodemon src/server.js",
->>>>>>> 713bf51ce7f0046e7dfd99e055f51112c7d70866
     "start": "node src/server.js",
     "test": "jest --coverage"
   },
