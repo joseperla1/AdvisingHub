@@ -1,0 +1,179 @@
+[33mcommit c2e516b7447aa7b09288aed3743fce81372d36ad[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32muser-dashboard[m[33m, [m[1;31morigin/user-dashboard[m[33m)[m
+Author: Edwin Montoya <montoyaedwin12345@gmail.com>
+Date:   Fri Feb 20 23:38:45 2026 -0600
+
+    Add quick links and dismiss notification functionality to dashboard plus other minor features for polishing
+
+[1mdiff --git a/frontend/ahfrontend/src/app/pages/user/user-dashboard/user-dashboard.component.html b/frontend/ahfrontend/src/app/pages/user/user-dashboard/user-dashboard.component.html[m
+[1mindex d9ebb91..c75cd56 100644[m
+[1m--- a/frontend/ahfrontend/src/app/pages/user/user-dashboard/user-dashboard.component.html[m
+[1m+++ b/frontend/ahfrontend/src/app/pages/user/user-dashboard/user-dashboard.component.html[m
+[36m@@ -1,4 +1,5 @@[m
+ <div class="ah-page">[m
+[32m+[m[32m  <!-- TABS NAVIGATION -->[m
+   <div class="ah-tabs">[m
+     <a class="ah-tab active" routerLink="/user/dashboard">User Dashboard</a>[m
+     <a class="ah-tab" routerLink="/user/join">Join Queue</a>[m
+[36m@@ -6,11 +7,13 @@[m
+     <a class="ah-tab" routerLink="/user/history">History</a>[m
+   </div>[m
+ [m
+[32m+[m[32m  <!-- HERO SECTION -->[m
+   <div class="ah-hero">[m
+     <h1>User Dashboard</h1>[m
+     <p>View your ticket, join a service, and track updates</p>[m
+   </div>[m
+ [m
+[32m+[m[32m  <!-- TOP STATS GRID -->[m
+   <div class="ah-grid cols-3">[m
+     <div class="ah-stat">[m
+       <div class="label">Status</div>[m
+[36m@@ -36,8 +39,9 @@[m
+ [m
+   <div class="ah-divider"></div>[m
+ [m
+[32m+[m[32m  <!-- MAIN GRID: CURRENT TICKET + NOTIFICATIONS -->[m
+   <div class="ah-grid cols-2">[m
+[31m-    <!-- LEFT SIDE -->[m
+[32m+[m[32m    <!-- LEFT SIDE: Current Ticket -->[m
+     <div class="ah-card">[m
+       <div class="ah-card-header">[m
+         <h2>Current Ticket</h2>[m
+[36m@@ -48,7 +52,10 @@[m
+         <div class="ah-row-top">[m
+           <div>[m
+             <h3>{{ activeTicket.serviceName }}</h3>[m
+[31m-            <p><b>Ticket ID:</b> {{ activeTicket.ticketId }}</p>[m
+[32m+[m[32m            <p>[m
+[32m+[m[32m              <b>Ticket ID:</b> {{ activeTicket.ticketId }}[m
+[32m+[m[32m              <button class="ah-btn ghost small" (click)="copyTicketId()">Copy</button>[m
+[32m+[m[32m            </p>[m
+             <p><b>Status:</b> {{ activeTicket.status }}</p>[m
+           </div>[m
+ [m
+[36m@@ -114,7 +121,7 @@[m
+       </ng-template>[m
+     </div>[m
+ [m
+[31m-    <!-- RIGHT SIDE -->[m
+[32m+[m[32m    <!-- RIGHT SIDE: Notifications -->[m
+     <div class="ah-card">[m
+       <div class="ah-card-header">[m
+         <h2>Notifications ({{ notifications.length }})</h2>[m
+[36m@@ -158,6 +165,8 @@[m
+                 <span class="ah-help">[m
+                   {{ n.time || 'Now' }}[m
+                 </span>[m
+[32m+[m
+[32m+[m[32m                <button class="ah-btn ghost small" (click)="dismissNotification(n)">×</button>[m
+               </div>[m
+ [m
+               <h3 style="font-size:14px;">[m
+[36m@@ -170,6 +179,44 @@[m
+     </div>[m
+   </div>[m
+ [m
+[32m+[m[32m  <!-- ===== NEXT STEPS / QUICK ACTION CARD ===== -->[m
+[32m+[m[32m  <div class="ah-card quick-action" *ngIf="activeTicket; else joinTip" style="margin-top:14px;">[m
+[32m+[m[32m  <div class="ah-card-header">[m
+[32m+[m[32m    <h2>Next Steps</h2>[m
+[32m+[m[32m  </div>[m
+[32m+[m[32m  <p>[m
+[32m+[m[32m    Your turn is coming up! Check your queue status or prepare required documents.[m
+[32m+[m[32m  </p>[m
+[32m+[m[32m  <div class="ah-row-actions">[m
+[32m+[m[32m    <button class="ah-btn primary" routerLink="/user/status">[m
+[32m+[m[32m      View Status[m
+[32m+[m[32m    </button>[m
+[32m+[m[32m    <!-- Quick Links -->[m
+[32m+[m[32m    <button class="ah-btn ghost" (click)="messageAdmin()">[m
+[32m+[m[32m      Message Admin[m
+[32m+[m[32m    </button>[m
+[32m+[m[32m    <button class="ah-btn ghost" (click)="viewServiceInfo(activeTicket.serviceName)">[m
+[32m+[m[32m      View Service Info[m
+[32m+[m[32m    </button>[m
+[32m+[m[32m  </div>[m
+[32m+[m[32m</div>[m
+[32m+[m
+[32m+[m[32m<ng-template #joinTip>[m
+[32m+[m[32m  <div class="ah-card quick-action" style="margin-top:14px;">[m
+[32m+[m[32m    <div class="ah-card-header">[m
+[32m+[m[32m      <h2>Next Steps</h2>[m
+[32m+[m[32m    </div>[m
+[32m+[m[32m    <p>[m
+[32m+[m[32m      You have no active ticket. Join a service now to start tracking your spot in line![m
+[32m+[m[32m    </p>[m
+[32m+[m[32m    <div class="ah-row-actions">[m
+[32m+[m[32m      <button class="ah-btn primary" routerLink="/user/join">[m
+[32m+[m[32m        Join Queue[m
+[32m+[m[32m      </button>[m
+[32m+[m[32m    </div>[m
+[32m+[m[32m  </div>[m
+[32m+[m[32m</ng-template>[m
+[32m+[m
+   <!-- SERVICES -->[m
+   <div class="ah-card" style="margin-top:14px;">[m
+     <div class="ah-card-header">[m
+[1mdiff --git a/frontend/ahfrontend/src/app/pages/user/user-dashboard/user-dashboard.component.ts b/frontend/ahfrontend/src/app/pages/user/user-dashboard/user-dashboard.component.ts[m
+[1mindex e67f9b0..a984a20 100644[m
+[1m--- a/frontend/ahfrontend/src/app/pages/user/user-dashboard/user-dashboard.component.ts[m
+[1m+++ b/frontend/ahfrontend/src/app/pages/user/user-dashboard/user-dashboard.component.ts[m
+[36m@@ -40,7 +40,6 @@[m [mexport class UserDashboardComponent implements OnInit {[m
+   constructor(private router: Router) {}[m
+ [m
+   ngOnInit(): void {[m
+[31m-    // Try to load from localStorage first (works with A2 mock flow)[m
+     this.activeTicket =[m
+       this.safeParse<ActiveTicket | null>('activeTicket', null) ??[m
+       this.safeParse<ActiveTicket | null>('ah_activeTicket_simple', null) ??[m
+[36m@@ -56,7 +55,6 @@[m [mexport class UserDashboardComponent implements OnInit {[m
+       this.safeParse<UserNotification[]>('ah_notifications_simple', []) ??[m
+       [];[m
+ [m
+[31m-    // Fallback mock data so it always looks good[m
+     if (!this.activeTicket) {[m
+       this.activeTicket = {[m
+         serviceName: 'General Advising',[m
+[36m@@ -103,11 +101,29 @@[m [mexport class UserDashboardComponent implements OnInit {[m
+     this.activeTicket = null;[m
+     localStorage.removeItem('activeTicket');[m
+     localStorage.removeItem('ah_activeTicket_simple');[m
+[31m-    // optional: add a notification[m
+     this.notifications.unshift({ type: 'INFO', message: 'You left the queue.', time: this.nowTime() });[m
+     localStorage.setItem('notifications', JSON.stringify(this.notifications));[m
+   }[m
+ [m
+[32m+[m[32m  /* ===== NEW QUICK LINKS METHODS ===== */[m
+[32m+[m[32m  messageAdmin(): void {[m
+[32m+[m[32m    alert('This would open a chat or email to the admin.');[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  viewServiceInfo(serviceName: string): void {[m
+[32m+[m[32m    alert(`This would show info for the service: ${serviceName}`);[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  copyTicketId(): void {[m
+[32m+[m[32m    if (this.activeTicket) navigator.clipboard.writeText(this.activeTicket.ticketId);[m
+[32m+[m[32m    alert('Ticket ID copied to clipboard!');[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  dismissNotification(notification: UserNotification): void {[m
+[32m+[m[32m    this.notifications = this.notifications.filter(n => n !== notification);[m
+[32m+[m[32m    localStorage.setItem('notifications', JSON.stringify(this.notifications));[m
+[32m+[m[32m  }[m
+[32m+[m
+   badgeClassForStatus(status: string): string {[m
+     switch (status) {[m
+       case 'Served': return 'success';[m
+[1mdiff --git a/package-lock.json b/package-lock.json[m
+[1mnew file mode 100644[m
+[1mindex 0000000..cc6b4af[m
+[1m--- /dev/null[m
+[1m+++ b/package-lock.json[m
+[36m@@ -0,0 +1,6 @@[m
+[32m+[m[32m{[m
+[32m+[m[32m  "name": "AdvisingHub",[m
+[32m+[m[32m  "lockfileVersion": 3,[m
+[32m+[m[32m  "requires": true,[m
+[32m+[m[32m  "packages": {}[m
+[32m+[m[32m}[m
