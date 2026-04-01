@@ -8,6 +8,10 @@
     </div>
   </div>
 
+  <div *ngIf="loadError()" class="ah-card ah-alert" style="margin-bottom:12px;color:#991b1b;">
+    {{ loadError() }}
+  </div>
+
   <!-- No active ticket -->
   <div class="ah-card" *ngIf="!ticket()">
     <div class="ah-card__header">
@@ -24,8 +28,8 @@
 
       <div class="ah-actions">
         <a class="ah-btn ah-btn--primary" routerLink="/user/join">Go to Join Queue</a>
-        <button class="ah-btn ah-btn--secondary" type="button" (click)="seedDemoTicket()">
-          Load Demo Ticket
+        <button class="ah-btn ah-btn--secondary" type="button" (click)="refresh()">
+          Refresh
         </button>
       </div>
     </div>
@@ -66,10 +70,20 @@
         <div class="ah-value">{{ waitDisplay() }}</div>
       </div>
 
+      <div *ngIf="leaveError()" class="ah-text" style="color:#991b1b;margin-bottom:8px;">
+        {{ leaveError() }}
+      </div>
+
       <div class="ah-actions ah-actions--left">
-        <button class="ah-btn ah-btn--danger" type="button" (click)="leaveQueue()">
-          Leave Queue
+        <button
+          class="ah-btn ah-btn--danger"
+          type="button"
+          (click)="leaveQueue()"
+          [disabled]="leaving()"
+        >
+          {{ leaving() ? 'Leaving…' : 'Leave Queue' }}
         </button>
+        <button class="ah-btn ah-btn--secondary" type="button" (click)="refresh()">Refresh</button>
       </div>
     </div>
   </div>

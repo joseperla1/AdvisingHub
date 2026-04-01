@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
-export type Priority = 'low' | 'medium' | 'high';
+export type Priority = 'low' | 'medium' | 'high' | 'normal';
 
 export interface Service {
   id: string;
@@ -31,18 +31,19 @@ export class ServicesStore {
       name: s.name ?? '',
       description: s.description ?? '',
       expectedDurationMin: s.expectedDuration ?? s.expectedDurationMin ?? 0,
-      priority: s.priority ?? 'medium',
+      priority: (s.priority === 'normal' ? 'medium' : s.priority) as Priority,
       updatedAt: s.updatedAt ? new Date(s.updatedAt) : new Date()
     };
   }
 
   // Frontend → backend mapping
   private mapToBackend(input: Omit<Service, 'id' | 'updatedAt'>) {
+    const priority = input.priority === 'medium' ? 'normal' : input.priority;
     return {
       name: input.name,
       description: input.description,
-      expectedDuration: input.expectedDurationMin,
-      priority: input.priority
+      expectedDurationMin: input.expectedDurationMin,
+      priority,
     };
   }
 
@@ -59,17 +60,20 @@ export class ServicesStore {
     }
   }
 
-  // Create a new service (in-memory only; survives until refresh / full reload)
   async create(input: Omit<Service, 'id' | 'updatedAt'>) {
-    const svc: Service = {
-      id: crypto.randomUUID(),
-      name: input.name,
-      description: input.description,
-      expectedDurationMin: input.expectedDurationMin,
-      priority: input.priority,
-      updatedAt: new Date(),
-    };
-    this.services.update(list => [svc, ...list]);
+    try {
+      const payload = this.mapToBackend(input);
+      const res: { success?: boolean; data?: unknown } = await firstValueFrom(
+        this.http.post(this.baseUrl, payload)
+      );
+      if (res.success && res.data) {
+        const mapped = this.mapFromBackend(res.data);
+        this.services.update(list => [mapped, ...list]);
+      }
+    } catch (err) {
+      console.error('Failed to create service', err);
+      throw err;
+    }
   }
 
   // Update an existing service (API when available; otherwise patch in-memory row)

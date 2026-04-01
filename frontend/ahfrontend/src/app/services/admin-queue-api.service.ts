@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export type QueuePriority = 'low' | 'medium' | 'high' | 'normal';
-export type QueueState = 'waiting' | 'serving' | 'served' | 'left';
+export type QueueState = 'waiting' | 'serving' | 'served' | 'left' | 'no-show';
 
 export interface AdminQueueItem {
   id: string;

@@ -6,7 +6,7 @@ async function getServices(req, res, next) {
     const services = await serviceCatalogService.findAll();
     const mapped = services.map(s => ({
       ...s,
-      expectedDurationMin: s.expectedDuration ?? 15
+      expectedDurationMin: s.expectedDurationMin ?? s.expectedDuration ?? 15,
     }));
     res.status(200).json({ success: true, data: mapped });
   } catch (error) {
@@ -20,9 +20,12 @@ async function getServiceById(req, res, next) {
     const service = await serviceCatalogService.findById(req.params.id);
     if (!service) return res.status(404).json({ success: false, error: 'Service not found' });
 
-    res.status(200).json({ 
-      success: true, 
-      data: { ...service, expectedDurationMin: service.expectedDuration ?? 15 } 
+    res.status(200).json({
+      success: true,
+      data: {
+        ...service,
+        expectedDurationMin: service.expectedDurationMin ?? service.expectedDuration ?? 15,
+      },
     });
   } catch (error) {
     next(error);
@@ -41,20 +44,20 @@ async function createService(req, res, next) {
     const newService = await serviceCatalogService.create({
       name,
       description: description || '',
-      expectedDuration: expectedDurationMin,
-      priority: priority || 'medium'
+      expectedDurationMin,
+      priority: priority || 'normal',
     });
 
-    res.status(201).json({ 
-      success: true, 
+    res.status(201).json({
+      success: true,
       data: {
         id: newService.id,
         name: newService.name,
         description: newService.description,
-        expectedDurationMin: newService.expectedDuration ?? 15,
-        priority: newService.priority ?? 'medium',
-        updatedAt: new Date()
-      }
+        expectedDurationMin: newService.expectedDurationMin ?? 15,
+        priority: newService.priority ?? 'normal',
+        updatedAt: new Date(),
+      },
     });
   } catch (error) {
     next(error);
@@ -69,8 +72,8 @@ async function updateService(req, res, next) {
     const updated = await serviceCatalogService.update(req.params.id, {
       name,
       description,
-      expectedDuration: expectedDurationMin,
-      priority
+      expectedDurationMin,
+      priority,
     });
 
     if (!updated) return res.status(404).json({ success: false, error: 'Service not found' });
@@ -81,10 +84,10 @@ async function updateService(req, res, next) {
         id: updated.id,
         name: updated.name,
         description: updated.description,
-        expectedDurationMin: updated.expectedDuration ?? 15,
-        priority: updated.priority ?? 'medium',
-        updatedAt: new Date()
-      }
+        expectedDurationMin: updated.expectedDurationMin ?? 15,
+        priority: updated.priority ?? 'normal',
+        updatedAt: new Date(),
+      },
     });
   } catch (error) {
     next(error);

@@ -8,15 +8,13 @@ function validateJoinQueuePayload(body) {
     errors.push('userId is required and must be a string.');
   }
 
-  // OPTIONAL: name (if you want to keep it)
-  if (body.name !== undefined) {
-    if (typeof body.name !== 'string') {
-      errors.push('name must be a string.');
-    } else if (body.name.trim().length === 0) {
-      errors.push('name cannot be empty.');
-    } else if (body.name.length > 100) {
-      errors.push('name must not exceed 100 characters.');
-    }
+  // REQUIRED: display name (UserProfile.fullName equivalent)
+  if (!body.name || typeof body.name !== 'string') {
+    errors.push('name is required and must be a string.');
+  } else if (body.name.trim().length === 0) {
+    errors.push('name cannot be empty.');
+  } else if (body.name.length > 100) {
+    errors.push('name must not exceed 100 characters.');
   }
 
   // OPTIONAL: studentId (not needed if you already use userId)
@@ -47,6 +45,14 @@ function validateJoinQueuePayload(body) {
       !ALLOWED_PRIORITIES.includes(body.priority)
     ) {
       errors.push('priority must be one of: low, medium, high, normal.');
+    }
+  }
+
+  if (body.notes !== undefined) {
+    if (typeof body.notes !== 'string') {
+      errors.push('notes must be a string.');
+    } else if (body.notes.length > 500) {
+      errors.push('notes must not exceed 500 characters.');
     }
   }
 

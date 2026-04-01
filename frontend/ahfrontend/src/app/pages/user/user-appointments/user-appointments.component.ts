@@ -11,6 +11,7 @@ import {
   ServiceCatalogApiService,
   ServiceCatalogItem
 } from '../../../services/service-catalog-api.service';
+import { LoginService } from '../../../login/login.service';
 
 @Component({
   selector: 'app-user-appointments',
@@ -22,6 +23,7 @@ import {
 export class UserAppointmentsComponent implements OnInit {
   private appointmentsApi = inject(AppointmentsApiService);
   private servicesApi = inject(ServiceCatalogApiService);
+  private login = inject(LoginService);
 
   services = signal<ServiceCatalogItem[]>([]);
   appointments = signal<AppointmentItem[]>([]);
@@ -29,9 +31,13 @@ export class UserAppointmentsComponent implements OnInit {
   errorMessage = signal('');
   successMessage = signal('');
 
-  // mock logged-in user for now
-  studentName = 'Jose Student';
-  studentId = 'STU777';
+  get studentName(): string {
+    return this.login.getUserName() || 'Student';
+  }
+
+  get studentId(): string {
+    return this.login.getStudentId() || this.login.getUserId() || '';
+  }
 
   form = {
     serviceId: '',
@@ -57,7 +63,12 @@ export class UserAppointmentsComponent implements OnInit {
   }
 
   loadAppointments(): void {
-    this.appointmentsApi.getAppointmentsForStudent(this.studentId).subscribe({
+    const sid = this.studentId;
+    if (!sid) {
+      this.appointments.set([]);
+      return;
+    }
+    this.appointmentsApi.getAppointmentsForStudent(sid).subscribe({
       next: (res) => this.appointments.set(res.data),
       error: () => this.errorMessage.set('Could not load appointments.')
     });
@@ -72,13 +83,15 @@ export class UserAppointmentsComponent implements OnInit {
       return;
     }
 
+    const uid = this.login.getUserId();
     const payload: CreateAppointmentPayload = {
+      userId: uid || undefined,
       studentName: this.studentName,
       studentId: this.studentId,
       serviceId: this.form.serviceId,
       appointmentDate: this.form.appointmentDate,
       appointmentTime: this.form.appointmentTime,
-      notes: this.form.notes.trim() || undefined
+      notes: this.form.notes.trim() || undefined,
     };
 
     this.isLoading.set(true);

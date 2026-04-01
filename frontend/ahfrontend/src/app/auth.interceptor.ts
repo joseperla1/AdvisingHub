@@ -36,6 +36,9 @@ export class AuthInterceptor implements HttpInterceptor {
           localStorage.removeItem('authToken');
           localStorage.removeItem('userRole');
           localStorage.removeItem('userId');
+          localStorage.removeItem('userName');
+          localStorage.removeItem('studentId');
+          localStorage.removeItem('userEmail');
           clearAllQueueLocalState();
           this.router.navigate(['/login']);
         }
