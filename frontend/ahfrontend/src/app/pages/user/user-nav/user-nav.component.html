@@ -1,0 +1,14 @@
+<nav class="ah-unav" aria-label="User navigation">
+  <div class="ah-unav__tabs">
+    <a
+      routerLink="/user/dashboard"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      >User Dashboard</a>
+    <a routerLink="/user/join" routerLinkActive="active">Join Queue</a>
+    <a routerLink="/user/appointments" routerLinkActive="active">Appointments</a>
+    <a routerLink="/user/status" routerLinkActive="active">Queue Status</a>
+    <a routerLink="/user/history" routerLinkActive="active">History</a>
+  </div>
+  <button type="button" class="ah-unav__logout" (click)="logout()">Log out</button>
+</nav>

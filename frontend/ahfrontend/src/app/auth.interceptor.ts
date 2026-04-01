@@ -9,6 +9,7 @@ import {
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { clearAllQueueLocalState } from './pages/user/queue-local-storage';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
@@ -35,6 +36,7 @@ export class AuthInterceptor implements HttpInterceptor {
           localStorage.removeItem('authToken');
           localStorage.removeItem('userRole');
           localStorage.removeItem('userId');
+          clearAllQueueLocalState();
           this.router.navigate(['/login']);
         }
         return throwError(() => error);

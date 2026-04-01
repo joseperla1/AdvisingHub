@@ -1,12 +1,5 @@
 <div class="ah-page">
-  <!-- TABS NAVIGATION -->
-  <div class="ah-tabs">
-    <a class="ah-tab active" routerLink="/user/dashboard">User Dashboard</a>
-    <a class="ah-tab" routerLink="/user/join">Join Queue</a>
-    <a class="ah-tab" routerLink="/user/appointments">Appointments</a>
-    <a class="ah-tab" routerLink="/user/status">Queue Status</a>
-    <a class="ah-tab" routerLink="/user/history">History</a>
-  </div>
+  <app-user-nav />
 
   <!-- HERO SECTION -->
   <div class="ah-hero">
@@ -46,7 +39,7 @@
     <div class="ah-card">
       <div class="ah-card-header">
         <h2>Current Ticket</h2>
-        <small>Live (mock) details</small>
+        <small>From your current queue session</small>
       </div>
 
       <div *ngIf="activeTicket; else noTicket" class="ah-row">

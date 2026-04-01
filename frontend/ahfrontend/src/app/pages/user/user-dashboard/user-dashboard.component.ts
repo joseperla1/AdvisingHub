@@ -1,6 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
+import { filter, Subscription } from 'rxjs';
+import { UserNavComponent } from '../user-nav/user-nav.component';
+import {
+  leaveQueueAndRecordHistory,
+  readStoredActiveTicket,
+} from '../queue-local-storage';
 
 type TicketStatus = 'Waiting' | 'Almost Ready' | 'Served' | 'Left';
 
@@ -28,23 +34,20 @@ interface ActiveTicket {
 @Component({
   selector: 'app-user-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, UserNavComponent],
   templateUrl: './user-dashboard.component.html',
   styleUrls: ['./user-dashboard.component.css'],
 })
-export class UserDashboardComponent implements OnInit {
+export class UserDashboardComponent implements OnInit, OnDestroy {
   activeTicket: ActiveTicket | null = null;
   services: ServiceItem[] = [];
   notifications: UserNotification[] = [];
+  private navSub?: Subscription;
 
   constructor(private router: Router) {}
 
   ngOnInit(): void {
-    // Try to load from localStorage first (works with A2 mock flow)
-    this.activeTicket =
-      this.safeParse<ActiveTicket | null>('activeTicket', null) ??
-      this.safeParse<ActiveTicket | null>('ah_activeTicket_simple', null) ??
-      null;
+    this.refreshActiveTicketFromStore();
 
     this.services =
       this.safeParse<ServiceItem[]>('services', []) ??
@@ -55,17 +58,6 @@ export class UserDashboardComponent implements OnInit {
       this.safeParse<UserNotification[]>('notifications', []) ??
       this.safeParse<UserNotification[]>('ah_notifications_simple', []) ??
       [];
-
-    // Fallback mock data so it always looks good
-    if (!this.activeTicket) {
-      this.activeTicket = {
-        serviceName: 'General Advising',
-        ticketId: 'QS-1234',
-        status: 'Waiting',
-        position: 3,
-        estimatedWait: 30,
-      };
-    }
 
     if (!this.services.length) {
       this.services = [
@@ -82,6 +74,22 @@ export class UserDashboardComponent implements OnInit {
         { type: 'INFO', message: 'Bring your degree plan for Graduation Check.', time: this.nowTime() },
       ];
     }
+
+    this.navSub = this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe(() => {
+        if (this.router.url.split('?')[0] === '/user/dashboard') {
+          this.refreshActiveTicketFromStore();
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.navSub?.unsubscribe();
+  }
+
+  private refreshActiveTicketFromStore(): void {
+    this.activeTicket = this.loadActiveTicketFromStore();
   }
 
   get notificationsTop5(): UserNotification[] {
@@ -104,11 +112,9 @@ export class UserDashboardComponent implements OnInit {
   }
 
   leaveQueue(): void {
-    this.activeTicket = null;
-    localStorage.removeItem('activeTicket');
-    localStorage.removeItem('ah_activeTicket_simple');
+    leaveQueueAndRecordHistory('left');
+    this.refreshActiveTicketFromStore();
 
-    // optional: add a notification
     this.notifications.unshift({ type: 'INFO', message: 'You left the queue.', time: this.nowTime() });
     localStorage.setItem('notifications', JSON.stringify(this.notifications));
   }
@@ -130,6 +136,31 @@ export class UserDashboardComponent implements OnInit {
       case 'INFO': return 'success';
       default: return 'info';
     }
+  }
+
+  private loadActiveTicketFromStore(): ActiveTicket | null {
+    const s = readStoredActiveTicket();
+    if (!s) return null;
+    return {
+      serviceName: s.serviceName,
+      ticketId: s.ticketId,
+      status: this.mapStoredStatusToDisplay(s.status),
+      position: s.position,
+      estimatedWait: s.estimatedWaitMins,
+    };
+  }
+
+  private mapStoredStatusToDisplay(status: string): TicketStatus {
+    const key = (status || 'waiting').toLowerCase();
+    const map: Record<string, TicketStatus> = {
+      waiting: 'Waiting',
+      almost_ready: 'Almost Ready',
+      ready: 'Almost Ready',
+      served: 'Served',
+      left: 'Left',
+      canceled: 'Left',
+    };
+    return map[key] ?? 'Waiting';
   }
 
   private safeParse<T>(key: string, fallback: T): T {
