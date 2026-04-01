@@ -1,6 +1,22 @@
 # AdvisingHub
 Queue System for Student to connect with Academic Advisors
 
+login credentials to view the changes between different users and admin views:
+admins :
+email: 'admin@example.com'
+password: password
+
+email: 'advisor2@example.com'
+password: password
+
+users:
+email: 'john.smith@student.edu'
+password: password
+
+email: 'ariana.m@student.edu'
+password: password
+
+
 to run the backend:
 npm run dev
 When testing different features of the website such as going through the queue refreshing does not repopulate the queues you must restar the back end server either completely or typing (rs) in the terminal when the backend is runnning this refreshes the page with the mocked objects from the front end. 
