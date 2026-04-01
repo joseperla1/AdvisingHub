@@ -1,7 +1,9 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
+import { LS_ACTIVE_TICKET, readStoredActiveTicket } from './queue-local-storage';
+import { UserNavComponent } from './user-nav/user-nav.component';
 
 type QueueStatus = 'waiting' | 'almost_ready' | 'served' | 'left';
 
@@ -23,20 +25,10 @@ interface ActiveTicket {
   updatedAtISO: string;
 }
 
-interface TicketHistoryRow {
-  ticketId: string;
-  serviceName: string;
-  status: QueueStatus;
-  dateISO: string;
-}
-
-const LS_ACTIVE_TICKET = 'ah_activeTicket';
-const LS_HISTORY = 'ah_ticketHistory';
-
 @Component({
   selector: 'app-join-queue',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, UserNavComponent],
   templateUrl: './join-queue.component.html',
   styleUrls: ['./join-queue.component.css'],
 })
@@ -119,17 +111,10 @@ export class JoinQueueComponent implements OnInit {
 
       localStorage.setItem(LS_ACTIVE_TICKET, JSON.stringify(ticket));
 
-      this.appendHistory({
-        ticketId: ticket.ticketId,
-        serviceName: ticket.serviceName,
-        status: ticket.status,
-        dateISO: ticket.createdAtISO,
-      });
-
       this.activeTicket.set(ticket);
       this.form.reset({ serviceId: '', notes: '' });
 
-      this.router.navigateByUrl('/user/queue-status');
+      this.router.navigateByUrl('/user/status');
     } catch {
       this.submitError.set('Something went wrong. Please try again.');
     } finally {
@@ -138,27 +123,19 @@ export class JoinQueueComponent implements OnInit {
   }
 
   private readActiveTicket(): ActiveTicket | null {
-    try {
-      const raw = localStorage.getItem(LS_ACTIVE_TICKET);
-      return raw ? (JSON.parse(raw) as ActiveTicket) : null;
-    } catch {
-      return null;
-    }
-  }
-
-  private appendHistory(row: TicketHistoryRow): void {
-    const history = this.readHistory();
-    history.unshift(row);
-    localStorage.setItem(LS_HISTORY, JSON.stringify(history.slice(0, 50)));
-  }
-
-  private readHistory(): TicketHistoryRow[] {
-    try {
-      const raw = localStorage.getItem(LS_HISTORY);
-      return raw ? (JSON.parse(raw) as TicketHistoryRow[]) : [];
-    } catch {
-      return [];
-    }
+    const s = readStoredActiveTicket();
+    if (!s) return null;
+    return {
+      ticketId: s.ticketId,
+      serviceId: s.serviceId,
+      serviceName: s.serviceName,
+      notes: s.notes,
+      status: s.status as QueueStatus,
+      position: s.position,
+      estimatedWaitMins: s.estimatedWaitMins,
+      createdAtISO: s.createdAtISO,
+      updatedAtISO: s.updatedAtISO,
+    };
   }
 
   private generateTicketId(): string {

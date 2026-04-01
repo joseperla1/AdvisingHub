@@ -300,10 +300,11 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
+    this.loginService.logout();
     this.isLoggedIn.set(false);
     this.currentUser.set('');
     this.notices.push('info', 'Logged out', 'You have been signed out.');
-    this.router.navigate(['/login']);
+    void this.router.navigate(['/login']);
   }
 
   toggleNotifications(): void {

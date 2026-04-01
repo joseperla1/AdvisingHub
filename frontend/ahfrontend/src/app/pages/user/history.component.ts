@@ -1,20 +1,26 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { UserNavComponent } from './user-nav/user-nav.component';
 
 type Outcome = 'served' | 'left' | 'canceled' | 'no_show' | 'unknown';
 type Status = 'waiting' | 'almost_ready' | 'ready' | 'served' | 'left' | 'canceled' | 'unknown';
 
 interface RawHistoryItem {
   id?: string;
+  ticketId?: string;
   serviceName?: string;
   service?: string;
   date?: string;
+  dateISO?: string;
   joinedAt?: string;
+  joinedAtIso?: string;
   endedAt?: string;
+  leftAtIso?: string;
   status?: string;
   outcome?: string;
   position?: number | string | null;
   estWaitMin?: number | string | null;
+  estimatedWaitMins?: number | string | null;
   [key: string]: unknown;
 }
 
@@ -32,7 +38,7 @@ interface HistoryItemVM {
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, UserNavComponent],
   templateUrl: './history.component.html',
   styleUrls: ['./history.component.css'],
 })
@@ -108,14 +114,28 @@ export class HistoryComponent implements OnInit {
     if (!Array.isArray(parsed)) return [];
 
     return parsed.map((item: RawHistoryItem, i: number) => ({
-      id: item.id ?? `hist_${i + 1}`,
-      serviceName: item.serviceName ?? item.service ?? 'Service',
+      id: String(item.id ?? item.ticketId ?? `hist_${i + 1}`),
+      serviceName: String(item.serviceName ?? item.service ?? 'Service'),
       status: (item.status as Status) ?? 'unknown',
       outcome: (item.outcome as Outcome) ?? 'unknown',
-      position: item.position ? Number(item.position) : null,
-      estWaitMin: item.estWaitMin ? Number(item.estWaitMin) : null,
-      joinedAtIso: item.joinedAt ?? item.date ?? null,
-      leftAtIso: item.endedAt ?? null,
+      position:
+        item.position !== undefined && item.position !== null && item.position !== ''
+          ? Number(item.position)
+          : null,
+      estWaitMin:
+        item.estWaitMin != null
+          ? Number(item.estWaitMin)
+          : item.estimatedWaitMins != null
+            ? Number(item.estimatedWaitMins)
+            : null,
+      joinedAtIso:
+        (item.joinedAt as string) ??
+        (item.joinedAtIso as string) ??
+        (item.date as string) ??
+        (item.dateISO as string) ??
+        null,
+      leftAtIso:
+        (item.endedAt as string) ?? (item.leftAtIso as string) ?? null,
     }));
   }
 }

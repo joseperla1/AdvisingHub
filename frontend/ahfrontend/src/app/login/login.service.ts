@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { clearAllQueueLocalState } from '../pages/user/queue-local-storage';
 
 interface LoginResponse {
   success: boolean;
@@ -80,10 +81,15 @@ export class LoginService {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userRole');
     localStorage.removeItem('userId');
+    clearAllQueueLocalState();
   }
 
   getToken(): string | null {
     return localStorage.getItem('authToken');
+  }
+
+  isLoggedIn(): boolean {
+    return !!this.getToken();
   }
 
   getUserRole(): 'admin' | 'user' | null {

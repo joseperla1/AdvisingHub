@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { UserNavComponent } from '../user-nav/user-nav.component';
 import {
   AppointmentsApiService,
   AppointmentItem,
@@ -15,7 +15,7 @@ import {
 @Component({
   selector: 'app-user-appointments',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, UserNavComponent],
   templateUrl: './user-appointments.component.html',
   styleUrls: ['./user-appointments.component.css']
 })

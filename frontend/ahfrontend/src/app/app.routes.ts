@@ -1,65 +1,74 @@
 import { Routes } from '@angular/router';
 import { StaffQueueManagementComponent } from './/staff-queue-management/staff-queue-management.component';
-import { UserDashboardComponent } from './pages/user/user-dashboard/user-dashboard.component';
-import { UserAppointmentsComponent } from './pages/user/user-appointments/user-appointments.component';
-
-// TEMPORARY startup route switch
-// Change this to 'admin' or 'user/dashboard' depending on which view you want first.
-// Remove this once login-based routing is implemented.
-//const DEFAULT_START_ROUTE = 'user/dashboard';
-const DEFAULT_START_ROUTE = 'admin';
+import {
+  adminGuard,
+  authGuard,
+  guestGuard,
+  roleDefaultGuard,
+} from './guards/auth.guards';
+import { HomeRedirectComponent } from './home-redirect.component';
 
 export const routes: Routes = [
   {
     path: 'login',
+    canActivate: [guestGuard],
     loadComponent: () =>
-      import('./login/login.component').then(m => m.LoginComponent)
+      import('./login/login.component').then(m => m.LoginComponent),
   },
   {
     path: 'registration',
+    canActivate: [guestGuard],
     loadComponent: () =>
-      import('./registration/registration.component').then(m => m.RegistrationComponent)
+      import('./registration/registration.component').then(m => m.RegistrationComponent),
   },
   {
     path: 'admin',
-    component: StaffQueueManagementComponent
+    canActivate: [authGuard, adminGuard],
+    component: StaffQueueManagementComponent,
   },
   {
-    path:'user/appointments',
+    path: 'user/appointments',
+    canActivate: [authGuard],
     loadComponent: () =>
-      import('./pages/user/user-appointments/user-appointments.component')
-      .then(m=> m.UserAppointmentsComponent)
+      import('./pages/user/user-appointments/user-appointments.component').then(
+        m => m.UserAppointmentsComponent
+      ),
   },
   {
     path: 'user/dashboard',
+    canActivate: [authGuard],
     loadComponent: () =>
-      import('./pages/user/user-dashboard/user-dashboard.component')
-        .then(m => m.UserDashboardComponent)
+      import('./pages/user/user-dashboard/user-dashboard.component').then(
+        m => m.UserDashboardComponent
+      ),
   },
-
-
   {
     path: 'user/join',
+    canActivate: [authGuard],
     loadComponent: () =>
-      import('./pages/user/join-queue.component')
-        .then(m => m.JoinQueueComponent)
+      import('./pages/user/join-queue.component').then(m => m.JoinQueueComponent),
   },
-
   {
     path: 'user/status',
+    canActivate: [authGuard],
     loadComponent: () =>
-      import('./pages/user/queue-status.component')
-        .then(m => m.QueueStatusComponent)
+      import('./pages/user/queue-status.component').then(m => m.QueueStatusComponent),
   },
-
   {
     path: 'user/history',
+    canActivate: [authGuard],
     loadComponent: () =>
-      import('./pages/user/history.component')
-        .then(m => m.HistoryComponent)
+      import('./pages/user/history.component').then(m => m.HistoryComponent),
   },
-
-  
-  { path: '', redirectTo: DEFAULT_START_ROUTE, pathMatch: 'full' },
-  { path: '**', redirectTo: DEFAULT_START_ROUTE }
+  {
+    path: '',
+    pathMatch: 'full',
+    canActivate: [roleDefaultGuard],
+    component: HomeRedirectComponent,
+  },
+  {
+    path: '**',
+    canActivate: [roleDefaultGuard],
+    component: HomeRedirectComponent,
+  },
 ];
