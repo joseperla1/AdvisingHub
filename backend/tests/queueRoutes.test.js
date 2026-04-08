@@ -1,13 +1,24 @@
 const request = require('supertest');
 const app = require('../src/app');
-const { queueItems } = require('../src/data/queueStore');
+jest.mock('../src/services/queueService', () => ({
+  joinQueue: jest.fn(),
+  leaveQueue: jest.fn(),
+  getActiveQueueEntryForUser: jest.fn(),
+}));
+const queueService = require('../src/services/queueService');
 
 describe('Queue User Routes', () => {
   beforeEach(() => {
-    queueItems.length = 0;
+    jest.clearAllMocks();
   });
 
   test('POST /api/queue/join creates queue item', async () => {
+    queueService.joinQueue.mockResolvedValue({
+      queueItem: { id: 'qe1', status: 'waiting' },
+      position: 1,
+      estimatedWaitMin: 10,
+      notification: { id: 'evt1' },
+    });
     const response = await request(app)
       .post('/api/queue/join')
       .send({
@@ -21,10 +32,11 @@ describe('Queue User Routes', () => {
 
     expect(response.statusCode).toBe(201);
     expect(response.body.success).toBe(true);
-    expect(response.body.data.status).toBe('waiting');
+    expect(response.body.data.queueItem.status).toBe('waiting');
   });
 
   test('POST /api/queue/join returns 400 for invalid payload', async () => {
+    queueService.joinQueue.mockRejectedValue(Object.assign(new Error('bad payload'), { statusCode: 400 }));
     const response = await request(app)
       .post('/api/queue/join')
       .send({
@@ -40,17 +52,7 @@ describe('Queue User Routes', () => {
   });
 
   test('POST /api/queue/:queueId/leave marks waiting user as left', async () => {
-    queueItems.push({
-      id: 'q1',
-      userId: 'u101',
-      name: 'John Smith',
-      studentId: 'STU001',
-      serviceId: 'svc1',
-      serviceName: 'Transcript Request',
-      priority: 'normal',
-      status: 'waiting',
-      joinedAt: '2026-03-24T18:00:00.000Z'
-    });
+    queueService.leaveQueue.mockResolvedValue({ id: 'qe1', status: 'left' });
 
     const response = await request(app).post('/api/queue/q1/leave');
 
@@ -59,6 +61,7 @@ describe('Queue User Routes', () => {
   });
 
   test('POST /api/queue/:queueId/leave returns 404 if queue item missing', async () => {
+    queueService.leaveQueue.mockRejectedValue(Object.assign(new Error('Queue item not found.'), { statusCode: 404 }));
     const response = await request(app).post('/api/queue/missing/leave');
 
     expect(response.statusCode).toBe(404);
