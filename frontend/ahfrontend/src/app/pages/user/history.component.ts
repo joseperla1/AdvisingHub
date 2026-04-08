@@ -125,27 +125,17 @@ export class HistoryComponent implements OnInit {
   }
 
   private mapEntry(e: QueueHistoryEntry): HistoryItemVM {
-    const st = (e.status || 'unknown').toLowerCase() as Status;
     return {
-      id: e.queueId || e.id,
+      id: e.id,
       serviceName: e.serviceName || 'Service',
-      status: st,
-      outcome: this.inferOutcome(e),
+      status: 'unknown',
+      outcome: 'unknown',
       position: null,
       estWaitMin: null,
-      joinedAtIso: e.timestamp,
-      leftAtIso: e.action === 'left' || e.action === 'served' ? e.timestamp : null,
+      joinedAtIso: e.joinedAt,
+      leftAtIso: e.leftAt,
     };
   }
 
-  private inferOutcome(e: QueueHistoryEntry): Outcome {
-    const a = (e.action || '').toLowerCase();
-    const s = (e.status || '').toLowerCase();
-    if (a === 'served' || s === 'served') return 'served';
-    if (a === 'left' || s === 'left') return 'left';
-    if (s === 'no-show' || s === 'no_show') return 'no_show';
-    if (s === 'canceled') return 'canceled';
-    if (a === 'joined' || a === 'serving') return 'unknown';
-    return 'unknown';
-  }
+  // Outcome/status no longer shown in history (UI keeps these for older template compatibility).
 }

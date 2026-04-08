@@ -1,40 +1,19 @@
 const request = require('supertest');
 const app = require('../src/app');
-const { appointments } = require('../src/data/appointmentsStore');
-const { services } = require('../src/data/servicesStores');
+jest.mock('../src/services/appointmentService', () => ({
+  createAppointment: jest.fn(),
+  getAppointmentsForStudent: jest.fn(),
+  getAdminAppointments: jest.fn(),
+}));
+const appointmentService = require('../src/services/appointmentService');
 
 describe('Appointment Routes', () => {
   beforeEach(() => {
-    appointments.length = 0;
-    services.length = 0;
-
-    services.push(
-      {
-        id: 'svc1',
-        name: 'Transcript Request',
-        description: 'Official and unofficial transcript processing.',
-        expectedDurationMin: 10,
-        priority: 'normal'
-      }
-    );
-
-    appointments.push(
-      {
-        id: 'apt1',
-        studentName: 'Ariana M.',
-        studentId: 'STU002',
-        serviceId: 'svc1',
-        serviceName: 'Transcript Request',
-        appointmentDate: '2026-03-28',
-        appointmentTime: '14:30',
-        advisor: 'Advisor Smith',
-        status: 'Scheduled',
-        queuePosition: null
-      }
-    );
+    jest.clearAllMocks();
   });
 
   test('POST /api/appointments creates appointment', async () => {
+    appointmentService.createAppointment.mockResolvedValue({ id: 'apt1', status: 'Scheduled' });
     const response = await request(app)
       .post('/api/appointments')
       .send({
@@ -52,6 +31,7 @@ describe('Appointment Routes', () => {
   });
 
   test('POST /api/appointments returns 400 for invalid payload', async () => {
+    appointmentService.createAppointment.mockRejectedValue(Object.assign(new Error('invalid'), { statusCode: 400 }));
     const response = await request(app)
       .post('/api/appointments')
       .send({
@@ -67,6 +47,7 @@ describe('Appointment Routes', () => {
   });
 
   test('GET /api/appointments returns appointments for studentId query', async () => {
+    appointmentService.getAppointmentsForStudent.mockResolvedValue([{ id: 'apt1' }]);
     const response = await request(app)
       .get('/api/appointments')
       .query({ studentId: 'STU002' });
@@ -77,6 +58,7 @@ describe('Appointment Routes', () => {
   });
 
   test('GET /api/admin/appointments returns all appointments', async () => {
+    appointmentService.getAdminAppointments.mockResolvedValue([{ id: 'apt1' }]);
     const response = await request(app).get('/api/admin/appointments');
 
     expect(response.statusCode).toBe(200);

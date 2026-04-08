@@ -55,25 +55,6 @@
 
     <div class="ah-divider"></div>
 
-    <div class="ah-grid cols-3">
-      <div class="ah-stat">
-        <div class="label">Last Known Status</div>
-        <div class="value" style="font-size:16px;">{{ statusLabel(h.status) }}</div>
-      </div>
-
-      <div class="ah-stat">
-        <div class="label">Position</div>
-        <div class="value" style="font-size:16px;">{{ formatPosition(h.position) }}</div>
-      </div>
-
-      <div class="ah-stat">
-        <div class="label">Estimated Wait</div>
-        <div class="value" style="font-size:16px;">{{ formatWait(h.estWaitMin) }}</div>
-      </div>
-    </div>
-
-    <div class="ah-divider"></div>
-
     <div style="display:grid; gap:6px;">
       <div *ngIf="h.joinedAtIso">
         <strong>Joined:</strong> {{ h.joinedAtIso | date:'short' }}

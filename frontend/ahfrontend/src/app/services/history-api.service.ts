@@ -4,15 +4,9 @@ import { Observable } from 'rxjs';
 
 export interface QueueHistoryEntry {
   id: string;
-  userId: string;
-  studentId?: string;
-  queueId: string;
-  name: string;
-  serviceId: string;
   serviceName: string;
-  action: string;
-  status: string;
-  timestamp: string;
+  joinedAt: string;
+  leftAt: string | null;
 }
 
 export interface ApiResponse<T> {

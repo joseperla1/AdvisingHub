@@ -2,7 +2,7 @@ const queueService = require('../services/queueService');
 
 async function getCurrentQueue(req, res, next) {
   try {
-    const queue = await queueService.getCurrentQueue();
+    const queue = await queueService.getCurrentQueueWithEstimates();
 
     res.status(200).json({
       success: true,

@@ -1,65 +1,39 @@
-const { services } = require('../data/servicesStores');
-
-function ensureQueueArrays() {
-  services.forEach(s => {
-    if (!s.queue) s.queue = [];
-  });
-}
-
-ensureQueueArrays();
+const serviceRepository = require('../repositories/serviceRepository');
 
 class ServiceCatalogService {
   async findAll() {
-    return [...services];
+    return serviceRepository.findAll();
   }
 
   async findById(id) {
-    return services.find(s => s.id === id) || null;
+    return serviceRepository.findById(id);
   }
 
   async create(serviceData) {
-    const duration =
-      serviceData.expectedDuration ??
-      serviceData.expectedDurationMin ??
-      15;
+    const duration = serviceData.expectedDuration ?? serviceData.expectedDurationMin ?? 15;
     const prio = serviceData.priority || 'normal';
-    const newService = {
-      id: `svc_${Date.now()}`,
+    return serviceRepository.create({
       name: serviceData.name,
       description: serviceData.description || '',
       expectedDurationMin: duration,
       priority: prio === 'medium' ? 'normal' : prio,
-      queue: [],
-    };
-    services.push(newService);
-    return newService;
+      isActive: true,
+    });
   }
 
   async update(id, updateData) {
-    const service = await this.findById(id);
-    if (!service) return null;
-
-    const duration =
-      updateData.expectedDuration ??
-      updateData.expectedDurationMin ??
-      service.expectedDurationMin;
-
-    const nextPrio = updateData.priority ?? service.priority;
-    Object.assign(service, {
-      name: updateData.name ?? service.name,
-      description: updateData.description ?? service.description,
+    const duration = updateData.expectedDuration ?? updateData.expectedDurationMin;
+    const nextPrio = updateData.priority;
+    return serviceRepository.update(id, {
+      name: updateData.name,
+      description: updateData.description,
       expectedDurationMin: duration,
       priority: nextPrio === 'medium' ? 'normal' : nextPrio,
     });
-
-    return service;
   }
 
   async removeService(id) {
-    const index = services.findIndex(s => s.id === id);
-    if (index === -1) return false;
-    services.splice(index, 1);
-    return true;
+    return serviceRepository.removeById(id);
   }
 }
 

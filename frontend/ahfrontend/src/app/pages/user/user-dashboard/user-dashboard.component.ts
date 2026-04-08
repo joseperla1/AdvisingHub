@@ -6,6 +6,7 @@ import { UserNavComponent } from '../user-nav/user-nav.component';
 import { LoginService } from '../../../login/login.service';
 import { ServiceCatalogApiService } from '../../../services/service-catalog-api.service';
 import { UserQueueApiService } from '../../../services/user-queue-api.service';
+import { NotificationsApiService } from '../../../services/notifications-api.service';
 
 type TicketStatus = 'Waiting' | 'Almost Ready' | 'Served' | 'Left';
 
@@ -50,25 +51,14 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
     private router: Router,
     private login: LoginService,
     private catalogApi: ServiceCatalogApiService,
-    private queueApi: UserQueueApiService
+    private queueApi: UserQueueApiService,
+    private notificationsApi: NotificationsApiService
   ) {}
 
   ngOnInit(): void {
     this.loadServicesFromApi();
     this.refreshActiveFromApi();
-
-    this.notifications =
-      this.safeParse<UserNotification[]>('notifications', []) ??
-      this.safeParse<UserNotification[]>('ah_notifications_simple', []) ??
-      [];
-
-    if (!this.notifications.length) {
-      this.notifications = [
-        { type: 'NEW', message: 'New service added: Academic Standing Support.', time: this.nowTime() },
-        { type: 'ALERT', message: 'High demand today—estimated wait times may increase.', time: this.nowTime() },
-        { type: 'INFO', message: 'Bring your degree plan for Graduation Check.', time: this.nowTime() },
-      ];
-    }
+    this.refreshNotificationsFromApi();
 
     this.navSub = this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
@@ -76,6 +66,7 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
         if (this.router.url.split('?')[0] === '/user/dashboard') {
           this.loadServicesFromApi();
           this.refreshActiveFromApi();
+          this.refreshNotificationsFromApi();
         }
       });
   }
@@ -151,8 +142,7 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
   }
 
   markAllRead(): void {
-    this.notifications = this.notifications.map(n => ({ ...n, type: n.type === 'NEW' ? 'INFO' : n.type }));
-    localStorage.setItem('notifications', JSON.stringify(this.notifications));
+    // Server-backed notifications; no local "read" state in current API.
   }
 
   leaveQueue(): void {
@@ -164,17 +154,11 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
       next: () => {
         this.leavingQueue = false;
         this.refreshActiveFromApi();
-        this.notifications.unshift({ type: 'INFO', message: 'You left the queue.', time: this.nowTime() });
-        localStorage.setItem('notifications', JSON.stringify(this.notifications));
+        this.refreshNotificationsFromApi();
       },
       error: () => {
         this.leavingQueue = false;
-        this.notifications.unshift({
-          type: 'ALERT',
-          message: 'Could not leave the queue. Try again from Queue Status.',
-          time: this.nowTime(),
-        });
-        localStorage.setItem('notifications', JSON.stringify(this.notifications));
+        // keep current list; backend will reflect status events when applicable
       },
     });
   }
@@ -221,18 +205,30 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
     return map[key] ?? 'Waiting';
   }
 
-  private safeParse<T>(key: string, fallback: T): T {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return fallback;
-      return JSON.parse(raw) as T;
-    } catch {
-      return fallback;
-    }
-  }
-
   private nowTime(): string {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  private refreshNotificationsFromApi(): void {
+    const uid = this.login.getUserId();
+    if (!uid) {
+      this.notifications = [];
+      return;
+    }
+
+    this.notificationsApi.getForUser(uid).subscribe({
+      next: res => {
+        const rows = res.data ?? [];
+        this.notifications = rows.slice(0, 25).map(r => ({
+          type: 'INFO',
+          message: r.message,
+          time: new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }));
+      },
+      error: () => {
+        this.notifications = [];
+      },
+    });
   }
 
   copyTicketId(): void {

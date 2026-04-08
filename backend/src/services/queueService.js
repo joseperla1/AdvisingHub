@@ -30,11 +30,35 @@ class QueueService {
 
   async getCurrentQueue() {
     const items = await queueRepository.findAll();
-    const activeItems = items.filter(
-      item => item.status === 'waiting' || item.status === 'serving'
+    const activeItems = items.filter(item => item.status === 'waiting' || item.status === 'serving');
+    return this.sortQueue(activeItems);
+  }
+
+  async getCurrentQueueWithEstimates() {
+    const sorted = await this.getCurrentQueue();
+    const services = await serviceRepository.findAll();
+    const durationByServiceId = new Map(
+      services.map(s => [String(s.id), Number(s.expectedDurationMin ?? 20)])
     );
 
-    return this.sortQueue(activeItems);
+    const getDuration = (serviceId) => {
+      const d = durationByServiceId.get(String(serviceId));
+      return Number.isFinite(d) && d > 0 ? d : 20;
+    };
+
+    let cumulative = 0;
+    return sorted.map((item, idx) => {
+      const estimatedWaitMin =
+        item.status === 'serving' ? 0 : Math.max(0, cumulative);
+
+      cumulative += getDuration(item.serviceId);
+
+      return {
+        ...item,
+        position: idx + 1,
+        estimatedWaitMin,
+      };
+    });
   }
 
   /** Active queue row for a user (waiting or serving), with computed position and ETA minutes. */
@@ -43,25 +67,25 @@ class QueueService {
       throw httpError(400, 'userId is required.');
     }
 
-    const items = await queueRepository.findAll();
-    const item = items.find(
-      i => i.userId === userId && (i.status === 'waiting' || i.status === 'serving')
-    );
-
-    if (!item) {
-      return null;
-    }
-
-    const sorted = await this.getCurrentQueue();
-    const position = sorted.findIndex(q => q.id === item.id) + 1;
-    const service = await serviceRepository.findById(item.serviceId);
-    const estimatedWaitMin =
-      service?.expectedDurationMin ?? service?.expectedDuration ?? 20;
+    const withEst = await this.getCurrentQueueWithEstimates();
+    const found = withEst.find(i => i.userId === userId);
+    if (!found) return null;
 
     return {
-      queueItem: item,
-      position,
-      estimatedWaitMin,
+      queueItem: {
+        id: found.id,
+        userId: found.userId,
+        name: found.name,
+        studentId: found.studentId,
+        serviceId: found.serviceId,
+        serviceName: found.serviceName,
+        priority: found.priority,
+        status: found.status,
+        joinedAt: found.joinedAt,
+        notes: found.notes,
+      },
+      position: found.position,
+      estimatedWaitMin: found.estimatedWaitMin,
     };
   }
 
@@ -113,7 +137,6 @@ class QueueService {
       serviceName: normalizedServiceName,
       priority: payload.priority || 'normal',
       status: 'waiting',
-      joinedAt: new Date().toISOString(),
       ...(notes ? { notes } : {}),
     };
 
@@ -134,18 +157,16 @@ class QueueService {
     let user = { id: payload.userId, name: payload.name };
     try {
       const userService = require('./user.service');
-      const foundUser = userService.findUserById(payload.userId);
+      const foundUser = await userService.findUserById(payload.userId);
       if (foundUser) user = foundUser;
     } catch (e) {
       /* fallback to payload */
     }
 
-    const allQueue = await this.getCurrentQueue();
-    const position = allQueue.findIndex(q => q.id === createdQueueItem.id) + 1;
-
-    const service = await serviceRepository.findById(normalizedServiceId);
-    const estimatedWaitMin =
-      service?.expectedDurationMin ?? service?.expectedDuration ?? 20;
+    const withEst = await this.getCurrentQueueWithEstimates();
+    const found = withEst.find(q => q.id === createdQueueItem.id);
+    const position = found?.position ?? 1;
+    const estimatedWaitMin = found?.estimatedWaitMin ?? 0;
 
     const notification = notificationService.notifyQueueJoined(
       user,
@@ -191,39 +212,37 @@ class QueueService {
   }
 
   async serveNextUser() {
-    const items = await queueRepository.findAll();
-
-    const currentlyServing = items.find(item => item.status === 'serving');
+    const currentlyServing = await queueRepository.findServing();
     if (currentlyServing) {
       throw httpError(409, 'A user is already being served.');
     }
 
-    const waitingItems = items.filter(item => item.status === 'waiting');
-    if (waitingItems.length === 0) {
+    const nextUser = await queueRepository.findNextWaiting();
+    if (!nextUser) {
       throw httpError(404, 'No waiting users in the queue.');
     }
 
-    const sortedWaitingItems = this.sortQueue(waitingItems);
-    const nextUser = sortedWaitingItems[0];
-
-    for (let i = 0; i < Math.min(2, sortedWaitingItems.length); i++) {
-      const queueItem = sortedWaitingItems[i];
-
-      let user = { id: queueItem.userId, name: queueItem.name };
-      try {
-        const userService = require('./user.service');
-        const foundUser = userService.findUserById(queueItem.userId);
-        if (foundUser) user = foundUser;
-      } catch (e) {
-        /* fallback to queueItem */
-      }
-
-      notificationService.notifyAlmostReady(user, queueItem, i + 1);
+    // Notify next user (position 1) as almost ready (keeps prior logging behavior)
+    try {
+      const userService = require('./user.service');
+      const foundUser = await userService.findUserById(nextUser.userId);
+      notificationService.notifyAlmostReady(foundUser || { id: nextUser.userId, name: nextUser.name }, nextUser, 1);
+    } catch (e) {
+      notificationService.notifyAlmostReady({ id: nextUser.userId, name: nextUser.name }, nextUser, 1);
     }
 
     const updated = await queueRepository.updateById(nextUser.id, {
       status: 'serving'
     });
+
+    // Notify the served student
+    try {
+      const userService = require('./user.service');
+      const foundUser = await userService.findUserById(updated.userId);
+      notificationService.notifyNowServing(foundUser || { id: updated.userId, name: updated.name }, updated);
+    } catch (e) {
+      notificationService.notifyNowServing({ id: updated.userId, name: updated.name }, updated);
+    }
 
     const historyService = require('./historyService');
     await historyService.addHistoryEntry({
@@ -250,9 +269,23 @@ class QueueService {
       throw httpError(409, 'Only waiting or serving users can be marked as no-show.');
     }
 
-    return queueRepository.updateById(queueId, {
+    const updated = await queueRepository.updateById(queueId, {
       status: 'no-show'
     });
+
+    const historyService = require('./historyService');
+    await historyService.addHistoryEntry({
+      userId: updated.userId,
+      studentId: updated.studentId,
+      queueId: updated.id,
+      name: updated.name,
+      serviceId: updated.serviceId,
+      serviceName: updated.serviceName,
+      action: 'no-show',
+      status: updated.status
+    });
+
+    return updated;
   }
 
   async completeServing(queueId) {

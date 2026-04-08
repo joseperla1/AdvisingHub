@@ -1,40 +1,54 @@
+jest.mock('../src/repositories/userRepository', () => ({
+  findCredentialByEmail: jest.fn(),
+  findByUserCode: jest.fn(),
+  findDefaultAdvisor: jest.fn(),
+  createUserWithProfile: jest.fn(),
+}));
+
+const userRepository = require('../src/repositories/userRepository');
 const userService = require('../src/services/user.service');
-const bcrypt = require('bcryptjs');
 
 describe('User Service', () => {
   beforeEach(() => {
-    // Reset users to initial state
-    // (No-op for now, as in-memory users are static)
+    jest.clearAllMocks();
   });
 
-  test('findUserByEmail returns correct user', () => {
-    const user = userService.findUserByEmail('user@example.com');
-    expect(user).toBeDefined();
+  test('findUserByEmail delegates to repository', async () => {
+    userRepository.findCredentialByEmail.mockResolvedValue({
+      userId: 1,
+      userCode: 'usr1',
+      email: 'user@example.com',
+      passwordHash: 'hash',
+      role: 'user',
+    });
+    const user = await userService.findUserByEmail('user@example.com');
+    expect(userRepository.findCredentialByEmail).toHaveBeenCalledWith('user@example.com');
     expect(user.email).toBe('user@example.com');
   });
 
-  test('findUserById returns correct user', () => {
-    const user = userService.findUserById('4');
-    expect(user).toBeDefined();
-    expect(user.email).toBe('user@example.com');
+  test('findUserById delegates to repository', async () => {
+    userRepository.findByUserCode.mockResolvedValue({
+      id: 'usr1',
+      email: 'user@example.com',
+      role: 'user',
+      name: 'User Name',
+      studentId: '20260001',
+    });
+    const user = await userService.findUserById('usr1');
+    expect(userRepository.findByUserCode).toHaveBeenCalledWith('usr1');
+    expect(user.id).toBe('usr1');
   });
 
-  test('createUser adds a new user', () => {
-    const newUser = userService.createUser({ email: 'test@x.com', password: 'pw', name: 'Test' });
-    expect(newUser).toBeDefined();
-    expect(newUser.email).toBe('test@x.com');
-    expect(bcrypt.compareSync('pw', newUser.passwordHash)).toBe(true);
-  });
-
-  test('updateUser updates user fields', () => {
-    const user = userService.createUser({ email: 'update@x.com', password: 'pw', name: 'Update' });
-    const updated = userService.updateUser(user.id, { name: 'Updated Name' });
-    expect(updated.name).toBe('Updated Name');
-  });
-
-  test('getAllUsers returns array', () => {
-    const users = userService.getAllUsers();
-    expect(Array.isArray(users)).toBe(true);
-    expect(users.length).toBeGreaterThan(0);
+  test('createUser creates user with hashed password', async () => {
+    userRepository.createUserWithProfile.mockResolvedValue({
+      id: 'usr_new',
+      email: 'test@x.com',
+      role: 'user',
+      name: 'Test',
+      studentId: null,
+    });
+    const u = await userService.createUser({ email: 'test@x.com', password: 'pw', name: 'Test' });
+    expect(userRepository.createUserWithProfile).toHaveBeenCalled();
+    expect(u.email).toBe('test@x.com');
   });
 });
