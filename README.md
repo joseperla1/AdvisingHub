@@ -6,8 +6,7 @@ admins :
 email: 'admin@example.com'
 password: password
 
-email: 'advisor2@example.com'
-password: password
+
 
 users:
 email: 'john.smith@student.edu'
