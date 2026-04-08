@@ -15,6 +15,8 @@ export interface AdminQueueItem {
   priority: QueuePriority;
   status: QueueState;
   joinedAt: string;
+  position?: number;
+  estimatedWaitMin?: number;
 }
 
 export interface ApiResponse<T> {

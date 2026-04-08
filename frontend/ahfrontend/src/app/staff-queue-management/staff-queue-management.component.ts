@@ -367,7 +367,7 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
       priority: item.priority,
       reason: item.serviceName,
       joinedAgo: this.formatJoinedAgo(item.joinedAt),
-      estWaitMin: this.calculateEstimatedWait(item, item.joinedAt),
+      estWaitMin: item.estimatedWaitMin ?? this.calculateEstimatedWait(item, item.joinedAt),
       state: this.mapApiStatusToUiState(item.status),
       notes: undefined
     };

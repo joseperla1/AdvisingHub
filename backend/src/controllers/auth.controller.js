@@ -16,9 +16,9 @@ const login = async (req, res) => {
       });
     }
 
-    const user = userService.findUserByEmail(email);
+    const credential = await userService.findUserByEmail(email);
 
-    if (!user) {
+    if (!credential) {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
@@ -26,7 +26,7 @@ const login = async (req, res) => {
     }
 
     // Verify password
-    const isPasswordValid = bcrypt.compareSync(password, user.passwordHash);
+    const isPasswordValid = bcrypt.compareSync(password, credential.passwordHash);
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
@@ -34,12 +34,14 @@ const login = async (req, res) => {
       });
     }
 
+    const user = await userService.findUserById(credential.userCode);
+
     // Generate JWT token
     const token = jwt.sign(
       {
-        userId: user.id,
-        email: user.email,
-        role: user.role
+        userId: credential.userCode,
+        email: credential.email,
+        role: credential.role
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -49,11 +51,11 @@ const login = async (req, res) => {
       success: true,
       token,
       user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        name: user.name,
-        studentId: user.studentId ?? null
+        id: credential.userCode,
+        email: credential.email,
+        role: credential.role,
+        name: user?.name ?? null,
+        studentId: user?.studentId ?? null
       }
     });
   } catch (error) {
@@ -78,7 +80,7 @@ const register = async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = userService.findUserByEmail(email);
+    const existingUser = await userService.findUserByEmail(email);
     if (existingUser) {
       return res.status(409).json({
         success: false,
@@ -87,7 +89,7 @@ const register = async (req, res) => {
     }
 
     // Create new user
-    const newUser = userService.createUser({
+    const newUser = await userService.createUser({
       email,
       password,
       name: name || email,

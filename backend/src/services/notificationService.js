@@ -40,8 +40,20 @@ function notifyAlmostReady(user, queueItem, position) {
   });
 }
 
+function notifyNowServing(user, queueItem) {
+  return createNotification({
+    userId: user.id,
+    queueId: queueItem.id,
+    type: 'serving',
+    title: 'Now serving',
+    message: `${user.name}, you are now being served for ${queueItem.serviceName}.`,
+    meta: {},
+  });
+}
+
 module.exports = {
   notifyQueueJoined,
   notifyAlmostReady,
+  notifyNowServing,
   createNotification,
 };

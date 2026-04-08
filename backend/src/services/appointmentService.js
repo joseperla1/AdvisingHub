@@ -28,9 +28,8 @@ class AppointmentService {
       throw httpError(404, 'Selected service not found.');
     }
 
-    const advisor = userService.getDefaultAdvisor();
+    const advisor = await userService.getDefaultAdvisor();
     const appointment = {
-      id: `apt_${Date.now()}`,
       userId: payload.userId?.trim() || undefined,
       studentName: payload.studentName.trim(),
       studentId: payload.studentId.trim(),
