@@ -160,7 +160,7 @@
                 </span>
 
                 <span class="ah-help">
-                  {{ n.time || 'Now' }}
+                  {{ n.createdAtIso ? (formatDisplayDate(n.createdAtIso) + ' ' + (n.time || '')) : (n.time || 'Now') }}
                 </span>
 
                 <button class="ah-btn ghost small" (click)="dismissNotification(n)">×</button>

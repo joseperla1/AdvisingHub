@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const userService = require('../services/user.service');
+const notificationRepository = require('../repositories/notificationRepository');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -35,6 +36,7 @@ const login = async (req, res) => {
     }
 
     const user = await userService.findUserById(credential.userCode);
+    await notificationRepository.ensureTodayAppointmentReminders(credential.userCode);
 
     // Generate JWT token
     const token = jwt.sign(

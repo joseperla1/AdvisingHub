@@ -15,10 +15,16 @@ class QueueRepository {
         qe.priority,
         qe.status,
         qe.joined_at AS joinedAt,
-        qe.notes
+        qe.notes,
+        served_by.user_code AS servedByAdminUserId,
+        qe.entry_source AS entrySource,
+        qe.left_at AS leftAt,
+        qe.cancel_reason AS cancelReason,
+        qe.appointment_id AS appointmentId
       FROM queue_entries qe
       JOIN user_credentials uc ON uc.id = qe.user_id
       JOIN services s ON s.id = qe.service_id
+      LEFT JOIN user_credentials served_by ON served_by.id = qe.served_by_admin_user_id
     `);
     return result.recordset;
   }
@@ -39,10 +45,16 @@ class QueueRepository {
           qe.priority,
           qe.status,
           qe.joined_at AS joinedAt,
-          qe.notes
+          qe.notes,
+          served_by.user_code AS servedByAdminUserId,
+          qe.entry_source AS entrySource,
+          qe.left_at AS leftAt,
+          qe.cancel_reason AS cancelReason,
+          qe.appointment_id AS appointmentId
         FROM queue_entries qe
         JOIN user_credentials uc ON uc.id = qe.user_id
         JOIN services s ON s.id = qe.service_id
+        LEFT JOIN user_credentials served_by ON served_by.id = qe.served_by_admin_user_id
         WHERE qe.queue_entry_code = @queue_entry_code
       `);
     return result.recordset[0] || null;
@@ -64,10 +76,16 @@ class QueueRepository {
           qe.priority,
           qe.status,
           qe.joined_at AS joinedAt,
-          qe.notes
+          qe.notes,
+          served_by.user_code AS servedByAdminUserId,
+          qe.entry_source AS entrySource,
+          qe.left_at AS leftAt,
+          qe.cancel_reason AS cancelReason,
+          qe.appointment_id AS appointmentId
         FROM queue_entries qe
         JOIN user_credentials uc ON uc.id = qe.user_id
         JOIN services s ON s.id = qe.service_id
+        LEFT JOIN user_credentials served_by ON served_by.id = qe.served_by_admin_user_id
         WHERE qe.student_id = @student_id
         ORDER BY qe.joined_at DESC
       `);
@@ -115,6 +133,10 @@ class QueueRepository {
       provided && String(provided).length <= 20
         ? String(provided)
         : queueEntryCode();
+    const entrySource =
+      queueItem.entrySource === 'appointment' || queueItem.entrySource === 'admin'
+        ? queueItem.entrySource
+        : 'walk-in';
     await pool
       .request()
       .input('queue_entry_code', sql.VarChar(20), code)
@@ -127,6 +149,14 @@ class QueueRepository {
       .input('priority', sql.VarChar(10), queueItem.priority || 'normal')
       .input('status', sql.VarChar(20), queueItem.status || 'waiting')
       .input('notes', sql.VarChar(500), queueItem.notes || null)
+      .input('entry_source', sql.VarChar(20), entrySource)
+      .input('cancel_reason', sql.VarChar(100), queueItem.cancelReason || null)
+      .input('appointment_id', sql.BigInt, queueItem.appointmentId ?? null)
+      .input(
+        'served_by_admin_code',
+        sql.VarChar(20),
+        queueItem.servedByAdminUserId ? String(queueItem.servedByAdminUserId) : null
+      )
       .query(`
         INSERT INTO queue_entries (
           queue_entry_code,
@@ -138,7 +168,12 @@ class QueueRepository {
           service_name_snapshot,
           priority,
           status,
-          notes
+          notes,
+          served_by_admin_user_id,
+          entry_source,
+          left_at,
+          cancel_reason,
+          appointment_id
         )
         VALUES (
           @queue_entry_code,
@@ -150,7 +185,15 @@ class QueueRepository {
           @service_name_snapshot,
           @priority,
           @status,
-          @notes
+          @notes,
+          CASE
+            WHEN @served_by_admin_code IS NULL THEN NULL
+            ELSE (SELECT TOP 1 id FROM user_credentials WHERE user_code = @served_by_admin_code)
+          END,
+          @entry_source,
+          NULL,
+          @cancel_reason,
+          @appointment_id
         )
       `);
 
@@ -164,22 +207,50 @@ class QueueRepository {
 
     const nextStatus = updates.status ?? existing.status;
     const nextNotes = updates.notes ?? existing.notes ?? null;
+    const nextEntrySource = updates.entrySource ?? existing.entrySource ?? 'walk-in';
+    const nextCancelReason = updates.cancelReason ?? existing.cancelReason ?? null;
 
     const startedServingAt = nextStatus === 'serving' && existing.status !== 'serving' ? 'SET' : null;
     const completedAt = nextStatus === 'served' && existing.status !== 'served' ? 'SET' : null;
+    const shouldSetLeftAt =
+      !existing.leftAt && (nextStatus === 'left' || nextStatus === 'no-show');
 
     await pool
       .request()
       .input('queue_entry_code', sql.VarChar(20), String(id))
       .input('status', sql.VarChar(20), nextStatus)
       .input('notes', sql.VarChar(500), nextNotes)
+      .input('entry_source', sql.VarChar(20), nextEntrySource)
+      .input('cancel_reason', sql.VarChar(100), nextCancelReason)
+      .input(
+        'appointment_id',
+        sql.BigInt,
+        updates.appointmentId ?? existing.appointmentId ?? null
+      )
+      .input(
+        'served_by_admin_code',
+        sql.VarChar(20),
+        updates.servedByAdminUserId ? String(updates.servedByAdminUserId) : null
+      )
+      .input('left_at', sql.DateTime, updates.leftAt ?? existing.leftAt ?? null)
       .query(`
         UPDATE queue_entries
         SET
           status = @status,
           notes = @notes,
+          entry_source = @entry_source,
+          cancel_reason = @cancel_reason,
+          appointment_id = @appointment_id,
+          served_by_admin_user_id = CASE
+            WHEN @served_by_admin_code IS NULL THEN served_by_admin_user_id
+            ELSE (SELECT TOP 1 id FROM user_credentials WHERE user_code = @served_by_admin_code)
+          END,
           started_serving_at = CASE WHEN '${startedServingAt}' = 'SET' THEN GETDATE() ELSE started_serving_at END,
           completed_at = CASE WHEN '${completedAt}' = 'SET' THEN GETDATE() ELSE completed_at END,
+          left_at = CASE
+            WHEN '${shouldSetLeftAt ? 'SET' : ''}' = 'SET' THEN GETDATE()
+            ELSE @left_at
+          END,
           updated_at = GETDATE()
         WHERE queue_entry_code = @queue_entry_code
       `);
@@ -212,10 +283,16 @@ class QueueRepository {
         qe.priority,
         qe.status,
         qe.joined_at AS joinedAt,
-        qe.notes
+        qe.notes,
+        served_by.user_code AS servedByAdminUserId,
+        qe.entry_source AS entrySource,
+        qe.left_at AS leftAt,
+        qe.cancel_reason AS cancelReason,
+        qe.appointment_id AS appointmentId
       FROM queue_entries qe
       JOIN user_credentials uc ON uc.id = qe.user_id
       JOIN services s ON s.id = qe.service_id
+      LEFT JOIN user_credentials served_by ON served_by.id = qe.served_by_admin_user_id
       WHERE qe.status = 'serving'
       ORDER BY qe.started_serving_at ASC
     `);
@@ -235,10 +312,16 @@ class QueueRepository {
         qe.priority,
         qe.status,
         qe.joined_at AS joinedAt,
-        qe.notes
+        qe.notes,
+        served_by.user_code AS servedByAdminUserId,
+        qe.entry_source AS entrySource,
+        qe.left_at AS leftAt,
+        qe.cancel_reason AS cancelReason,
+        qe.appointment_id AS appointmentId
       FROM queue_entries qe
       JOIN user_credentials uc ON uc.id = qe.user_id
       JOIN services s ON s.id = qe.service_id
+      LEFT JOIN user_credentials served_by ON served_by.id = qe.served_by_admin_user_id
       WHERE qe.status = 'waiting'
       ORDER BY
         CASE qe.priority
@@ -251,6 +334,17 @@ class QueueRepository {
         qe.joined_at ASC
     `);
     return result.recordset[0] || null;
+  }
+
+  async countCompletedToday() {
+    const pool = await getPool();
+    const result = await pool.request().query(`
+      SELECT COUNT(1) AS total
+      FROM queue_entries qe
+      WHERE qe.status = 'served'
+        AND CAST(COALESCE(qe.completed_at, qe.updated_at) AS DATE) = CAST(GETDATE() AS DATE)
+    `);
+    return Number(result.recordset[0]?.total || 0);
   }
 }
 

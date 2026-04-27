@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
-import { filter, Subscription } from 'rxjs';
+import { filter, interval, Subscription } from 'rxjs';
 import { UserNavComponent } from '../user-nav/user-nav.component';
 import { LoginService } from '../../../login/login.service';
 import { ServiceCatalogApiService } from '../../../services/service-catalog-api.service';
@@ -18,8 +18,10 @@ interface ServiceItem {
 }
 
 interface UserNotification {
+  id: string;
   type?: 'INFO' | 'ALERT' | 'NEW';
   message: string;
+  createdAtIso?: string;
   time?: string;
 }
 
@@ -46,6 +48,7 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
   leavingQueue = false;
   notifications: UserNotification[] = [];
   private navSub?: Subscription;
+  private notifPollSub?: Subscription;
 
   constructor(
     private router: Router,
@@ -69,10 +72,17 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
           this.refreshNotificationsFromApi();
         }
       });
+
+    // Poll queue + notifications so dashboard state stays aligned with backend updates.
+    this.notifPollSub = interval(30000).subscribe(() => {
+      this.refreshActiveFromApi();
+      this.refreshNotificationsFromApi();
+    });
   }
 
   ngOnDestroy(): void {
     this.navSub?.unsubscribe();
+    this.notifPollSub?.unsubscribe();
   }
 
   private loadServicesFromApi(): void {
@@ -142,7 +152,12 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
   }
 
   markAllRead(): void {
-    // Server-backed notifications; no local "read" state in current API.
+    const uid = this.login.getUserId();
+    if (!uid) return;
+    this.notificationsApi.markAllRead(uid).subscribe({
+      next: () => this.refreshNotificationsFromApi(),
+      error: () => {},
+    });
   }
 
   leaveQueue(): void {
@@ -209,6 +224,16 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
+  formatDisplayDate(value?: string): string {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}-${day}-${year}`;
+  }
+
   private refreshNotificationsFromApi(): void {
     const uid = this.login.getUserId();
     if (!uid) {
@@ -220,8 +245,10 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
       next: res => {
         const rows = res.data ?? [];
         this.notifications = rows.slice(0, 25).map(r => ({
+          id: r.id,
           type: 'INFO',
           message: r.message,
+          createdAtIso: r.createdAt,
           time: new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         }));
       },
@@ -238,7 +265,14 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
   }
 
   dismissNotification(n: UserNotification): void {
-    this.notifications = (this.notifications || []).filter(x => x !== n);
+    const uid = this.login.getUserId();
+    if (!uid) return;
+    this.notificationsApi.dismiss(uid, n.id).subscribe({
+      next: () => {
+        this.notifications = (this.notifications || []).filter(x => x.id !== n.id);
+      },
+      error: () => {},
+    });
   }
 
   messageAdmin(): void {

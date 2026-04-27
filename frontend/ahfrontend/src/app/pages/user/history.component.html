@@ -57,10 +57,10 @@
 
     <div style="display:grid; gap:6px;">
       <div *ngIf="h.joinedAtIso">
-        <strong>Joined:</strong> {{ h.joinedAtIso | date:'short' }}
+        <strong>Joined:</strong> {{ formatDisplayDateTime(h.joinedAtIso) }}
       </div>
       <div *ngIf="h.leftAtIso">
-        <strong>Left:</strong> {{ h.leftAtIso | date:'short' }}
+        <strong>Left:</strong> {{ formatDisplayDateTime(h.leftAtIso) }}
       </div>
     </div>
 

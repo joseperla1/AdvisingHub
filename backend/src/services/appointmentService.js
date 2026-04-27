@@ -14,7 +14,7 @@ class AppointmentService {
   }
 
   async getAdminAppointments() {
-    return appointmentRepository.findAll();
+    return appointmentRepository.findByStatuses(['Scheduled', 'Waiting']);
   }
 
   async createAppointment(payload) {

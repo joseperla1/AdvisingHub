@@ -28,6 +28,43 @@ class AppointmentRepository {
     return result.recordset;
   }
 
+  async findByStatuses(statuses = []) {
+    if (!Array.isArray(statuses) || statuses.length === 0) {
+      return [];
+    }
+
+    const pool = await getPool();
+    const request = pool.request();
+    const placeholders = statuses.map((_, idx) => `@status_${idx}`);
+    statuses.forEach((status, idx) => {
+      request.input(`status_${idx}`, sql.VarChar(20), String(status));
+    });
+
+    const result = await request.query(`
+      SELECT
+        a.appointment_code AS id,
+        uc.user_code AS userId,
+        a.student_name AS studentName,
+        a.student_id AS studentId,
+        s.service_code AS serviceId,
+        a.service_name_snapshot AS serviceName,
+        adv.user_code AS advisorId,
+        a.advisor_name_snapshot AS advisor,
+        a.appointment_date AS appointmentDate,
+        a.appointment_time AS appointmentTime,
+        a.status,
+        a.queue_position AS queuePosition,
+        a.notes
+      FROM appointments a
+      LEFT JOIN user_credentials uc ON uc.id = a.user_id
+      JOIN services s ON s.id = a.service_id
+      JOIN user_credentials adv ON adv.id = a.advisor_user_id
+      WHERE a.status IN (${placeholders.join(', ')})
+      ORDER BY a.appointment_date DESC, a.appointment_time DESC
+    `);
+    return result.recordset;
+  }
+
   async findById(id) {
     const pool = await getPool();
     const result = await pool

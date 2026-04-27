@@ -2,6 +2,7 @@ const request = require('supertest');
 const app = require('../src/app');
 jest.mock('../src/services/queueService', () => ({
   getCurrentQueueWithEstimates: jest.fn(),
+  getAdminQueueMetrics: jest.fn(),
   serveNextUser: jest.fn(),
   completeServing: jest.fn(),
   markNoShow: jest.fn(),
@@ -18,11 +19,13 @@ describe('Admin Queue Routes', () => {
       { id: 'qe2', studentId: 'STU002', estimatedWaitMin: 0 },
       { id: 'qe1', studentId: 'STU001', estimatedWaitMin: 10 },
     ]);
+    queueService.getAdminQueueMetrics.mockResolvedValue({ completedToday: 3 });
     const response = await request(app).get('/api/admin/queue');
 
     expect(response.statusCode).toBe(200);
     expect(response.body.success).toBe(true);
-    expect(response.body.data[0].studentId).toBe('STU002');
+    expect(response.body.data.queue[0].studentId).toBe('STU002');
+    expect(response.body.data.metrics.completedToday).toBe(3);
   });
 
   test('POST /api/admin/queue/serve-next serves next user', async () => {

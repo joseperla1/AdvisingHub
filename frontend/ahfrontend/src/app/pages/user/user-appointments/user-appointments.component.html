@@ -70,8 +70,8 @@
           <div class="ah-row-top">
             <div>
               <h3>{{ a.serviceName }}</h3>
-              <p><b>Date:</b> {{ a.appointmentDate }}</p>
-              <p><b>Time:</b> {{ a.appointmentTime }}</p>
+              <p><b>Date:</b> {{ formatDisplayDate(a.appointmentDate) }}</p>
+              <p><b>Time:</b> {{ formatDisplayTime(a.appointmentTime) }}</p>
               <p><b>Advisor:</b> {{ a.advisor }}</p>
               <p><b>Queue Position:</b> {{ a.queuePosition ?? '—' }}</p>
             </div>

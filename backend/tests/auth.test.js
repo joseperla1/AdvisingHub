@@ -7,7 +7,11 @@ jest.mock('../src/services/user.service', () => ({
   findUserById: jest.fn(),
   createUser: jest.fn(),
 }));
+jest.mock('../src/repositories/notificationRepository', () => ({
+  ensureTodayAppointmentReminders: jest.fn(),
+}));
 const userService = require('../src/services/user.service');
+const notificationRepository = require('../src/repositories/notificationRepository');
 
 const app = express();
 app.use(bodyParser.json());
@@ -74,5 +78,6 @@ describe('Auth API', () => {
     expect(res.body.success).toBe(true);
     expect(res.body).toHaveProperty('token');
     expect(res.body.user.email).toBe('user@example.com');
+    expect(notificationRepository.ensureTodayAppointmentReminders).toHaveBeenCalledWith('usr1');
   });
 });

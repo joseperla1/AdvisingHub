@@ -6,6 +6,70 @@ const { validateJoinQueuePayload } = require('../validators/queueValidators');
 const notificationService = require('./notificationService');
 
 class QueueService {
+  buildQueueSnapshotByUser(queueRows) {
+    const map = new Map();
+    queueRows
+      .filter(row => row.status === 'waiting' || row.status === 'serving')
+      .forEach(row => {
+        map.set(row.userId, {
+          queueId: row.id,
+          serviceName: row.serviceName,
+          position: row.position,
+          estimatedWaitMin: row.estimatedWaitMin,
+          status: row.status,
+        });
+      });
+    return map;
+  }
+
+  async notifyQueueProgressChanges(previousByUser) {
+    const current = await this.getCurrentQueueWithEstimates();
+    const currentByUser = this.buildQueueSnapshotByUser(current);
+
+    const notifications = [];
+    for (const [userId, before] of previousByUser.entries()) {
+      const after = currentByUser.get(userId);
+      if (!after || after.status !== 'waiting') continue;
+
+      const movedUp =
+        Number.isFinite(before.position) &&
+        Number.isFinite(after.position) &&
+        after.position < before.position;
+      const etaChanged =
+        Number.isFinite(before.estimatedWaitMin) &&
+        Number.isFinite(after.estimatedWaitMin) &&
+        after.estimatedWaitMin !== before.estimatedWaitMin;
+
+      if (!movedUp && !etaChanged) continue;
+
+      const movementPart = movedUp
+        ? `You moved up in line to #${after.position}.`
+        : `Your queue position is #${after.position}.`;
+      const etaPart = etaChanged
+        ? ` Updated wait time: ${after.estimatedWaitMin} min.`
+        : '';
+
+      notifications.push(
+        notificationService.createNotification({
+          userId,
+          queueId: after.queueId,
+          type: 'queue_progress',
+          title: 'Queue update',
+          message: `${movementPart}${etaPart}`,
+          meta: {
+            previousPosition: before.position,
+            position: after.position,
+            previousEstimatedWaitMin: before.estimatedWaitMin,
+            estimatedWaitMin: after.estimatedWaitMin,
+            serviceName: after.serviceName,
+          },
+        })
+      );
+    }
+
+    await Promise.all(notifications);
+  }
+
   getPriorityRank(priority) {
     const ranks = {
       high: 0,
@@ -90,6 +154,9 @@ class QueueService {
   }
 
   async joinQueue(payload) {
+    const previousSnapshot = this.buildQueueSnapshotByUser(
+      await this.getCurrentQueueWithEstimates()
+    );
     const validationErrors = validateJoinQueuePayload(payload);
     if (validationErrors.length > 0) {
       throw httpError(400, validationErrors.join(' '));
@@ -137,6 +204,13 @@ class QueueService {
       serviceName: normalizedServiceName,
       priority: payload.priority || 'normal',
       status: 'waiting',
+      entrySource:
+        payload.entrySource === 'appointment' || payload.entrySource === 'admin'
+          ? payload.entrySource
+          : payload.appointmentId
+            ? 'appointment'
+            : 'walk-in',
+      appointmentId: payload.appointmentId ?? null,
       ...(notes ? { notes } : {}),
     };
 
@@ -173,6 +247,7 @@ class QueueService {
       createdQueueItem,
       position
     );
+    await this.notifyQueueProgressChanges(previousSnapshot);
 
     return {
       queueItem: createdQueueItem,
@@ -182,7 +257,10 @@ class QueueService {
     };
   }
 
-  async leaveQueue(queueId) {
+  async leaveQueue(queueId, options = {}) {
+    const previousSnapshot = this.buildQueueSnapshotByUser(
+      await this.getCurrentQueueWithEstimates()
+    );
     const queueItem = await queueRepository.findById(queueId);
     if (!queueItem) {
       throw httpError(404, 'Queue item not found.');
@@ -193,7 +271,9 @@ class QueueService {
     }
 
     const updated = await queueRepository.updateById(queueId, {
-      status: 'left'
+      status: 'left',
+      cancelReason: options.cancelReason || 'student_left',
+      ...(options.adminUserId ? { servedByAdminUserId: options.adminUserId } : {}),
     });
 
     const historyService = require('./historyService');
@@ -208,10 +288,15 @@ class QueueService {
       status: updated.status
     });
 
+    await this.notifyQueueProgressChanges(previousSnapshot);
+
     return updated;
   }
 
-  async serveNextUser() {
+  async serveNextUser(options = {}) {
+    const previousSnapshot = this.buildQueueSnapshotByUser(
+      await this.getCurrentQueueWithEstimates()
+    );
     const currentlyServing = await queueRepository.findServing();
     if (currentlyServing) {
       throw httpError(409, 'A user is already being served.');
@@ -232,7 +317,8 @@ class QueueService {
     }
 
     const updated = await queueRepository.updateById(nextUser.id, {
-      status: 'serving'
+      status: 'serving',
+      ...(options.adminUserId ? { servedByAdminUserId: options.adminUserId } : {}),
     });
 
     // Notify the served student
@@ -256,10 +342,15 @@ class QueueService {
       status: updated.status
     });
 
+    await this.notifyQueueProgressChanges(previousSnapshot);
+
     return updated;
   }
 
-  async markNoShow(queueId) {
+  async markNoShow(queueId, options = {}) {
+    const previousSnapshot = this.buildQueueSnapshotByUser(
+      await this.getCurrentQueueWithEstimates()
+    );
     const queueItem = await queueRepository.findById(queueId);
     if (!queueItem) {
       throw httpError(404, 'Queue item not found.');
@@ -270,7 +361,9 @@ class QueueService {
     }
 
     const updated = await queueRepository.updateById(queueId, {
-      status: 'no-show'
+      status: 'no-show',
+      cancelReason: options.cancelReason || 'no_show',
+      ...(options.adminUserId ? { servedByAdminUserId: options.adminUserId } : {}),
     });
 
     const historyService = require('./historyService');
@@ -285,10 +378,15 @@ class QueueService {
       status: updated.status
     });
 
+    await this.notifyQueueProgressChanges(previousSnapshot);
+
     return updated;
   }
 
-  async completeServing(queueId) {
+  async completeServing(queueId, options = {}) {
+    const previousSnapshot = this.buildQueueSnapshotByUser(
+      await this.getCurrentQueueWithEstimates()
+    );
     const queueItem = await queueRepository.findById(queueId);
     if (!queueItem) {
       throw httpError(404, 'Queue item not found.');
@@ -299,7 +397,8 @@ class QueueService {
     }
 
     const updated = await queueRepository.updateById(queueId, {
-      status: 'served'
+      status: 'served',
+      ...(options.adminUserId ? { servedByAdminUserId: options.adminUserId } : {}),
     });
 
     const historyService = require('./historyService');
@@ -314,7 +413,14 @@ class QueueService {
       status: updated.status
     });
 
+    await this.notifyQueueProgressChanges(previousSnapshot);
+
     return updated;
+  }
+
+  async getAdminQueueMetrics() {
+    const completedToday = await queueRepository.countCompletedToday();
+    return { completedToday };
   }
 }
 
