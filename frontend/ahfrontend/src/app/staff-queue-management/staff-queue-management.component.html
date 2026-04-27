@@ -214,7 +214,6 @@
                 <div class="queue-actions">
                   <button class="btn dark compact" (click)="completeById(cur.id)">✓&nbsp; Complete</button>
                   <button class="btn light compact" (click)="noShowById(cur.id)">×&nbsp; No Show</button>
-                  <button class="btn light compact" (click)="manageById(cur.id)">Manage</button>
                 </div>
               </div>
 
@@ -273,8 +272,8 @@
               </div>
 
               <div class="appt-service">{{ a.serviceName }}</div>
-              <div class="appt-date">{{ a.appointmentDate }}</div>
-              <div class="appt-time">{{ a.appointmentTime }}</div>
+              <div class="appt-date">{{ formatDisplayDate(a.appointmentDate) }}</div>
+              <div class="appt-time">{{ formatDisplayTime(a.appointmentTime) }}</div>
               <div class="appt-advisor">{{ a.advisor }}</div>
               <div class="appt-queue">{{ a.queuePosition ?? '—' }}</div>
 

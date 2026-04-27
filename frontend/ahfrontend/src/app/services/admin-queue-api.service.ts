@@ -15,6 +15,11 @@ export interface AdminQueueItem {
   priority: QueuePriority;
   status: QueueState;
   joinedAt: string;
+  servedByAdminUserId?: string | null;
+  entrySource?: 'walk-in' | 'appointment' | 'admin';
+  leftAt?: string | null;
+  cancelReason?: string | null;
+  appointmentId?: number | null;
   position?: number;
   estimatedWaitMin?: number;
 }
@@ -25,6 +30,15 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+export interface AdminQueueMetrics {
+  completedToday: number;
+}
+
+export interface AdminQueueResponseData {
+  queue: AdminQueueItem[];
+  metrics: AdminQueueMetrics;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -32,8 +46,8 @@ export class AdminQueueApiService {
   private http = inject(HttpClient);
   private readonly baseUrl = 'http://localhost:3000/api/admin/queue';
 
-  getCurrentQueue(): Observable<ApiResponse<AdminQueueItem[]>> {
-    return this.http.get<ApiResponse<AdminQueueItem[]>>(this.baseUrl);
+  getCurrentQueue(): Observable<ApiResponse<AdminQueueResponseData>> {
+    return this.http.get<ApiResponse<AdminQueueResponseData>>(this.baseUrl);
   }
 
   serveNext(): Observable<ApiResponse<AdminQueueItem>> {

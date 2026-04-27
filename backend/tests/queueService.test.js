@@ -6,6 +6,7 @@ jest.mock('../src/repositories/queueRepository', () => ({
   updateById: jest.fn(),
   findServing: jest.fn(),
   findNextWaiting: jest.fn(),
+  countCompletedToday: jest.fn(),
 }));
 
 jest.mock('../src/repositories/serviceRepository', () => ({
@@ -17,6 +18,7 @@ jest.mock('../src/services/notificationService', () => ({
   notifyQueueJoined: jest.fn(() => ({ id: 'evt1' })),
   notifyAlmostReady: jest.fn(() => ({ id: 'evt2' })),
   notifyNowServing: jest.fn(() => ({ id: 'evt3' })),
+  createNotification: jest.fn(() => ({ id: 'evt4' })),
 }));
 
 jest.mock('../src/services/historyService', () => ({
@@ -82,6 +84,7 @@ describe('Queue Service', () => {
       };
       return map[id] || null;
     });
+    queueRepository.countCompletedToday.mockResolvedValue(0);
   });
 
   test('getCurrentQueue sorts by priority first', async () => {

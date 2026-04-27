@@ -15,6 +15,10 @@ export interface NotificationDto {
   message: string;
   createdAt: string;
   status: string;
+  isRead?: boolean;
+  readAt?: string | null;
+  isDismissed?: boolean;
+  dismissedAt?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -24,6 +28,24 @@ export class NotificationsApiService {
 
   getForUser(userId: string): Observable<ApiResponse<NotificationDto[]>> {
     return this.http.get<ApiResponse<NotificationDto[]>>(`${this.baseUrl}/${userId}`);
+  }
+
+  markRead(userId: string, notificationId: string): Observable<ApiResponse<unknown>> {
+    return this.http.post<ApiResponse<unknown>>(
+      `${this.baseUrl}/${userId}/${notificationId}/read`,
+      {}
+    );
+  }
+
+  dismiss(userId: string, notificationId: string): Observable<ApiResponse<unknown>> {
+    return this.http.post<ApiResponse<unknown>>(
+      `${this.baseUrl}/${userId}/${notificationId}/dismiss`,
+      {}
+    );
+  }
+
+  markAllRead(userId: string): Observable<ApiResponse<unknown>> {
+    return this.http.post<ApiResponse<unknown>>(`${this.baseUrl}/${userId}/read-all`, {});
   }
 }
 

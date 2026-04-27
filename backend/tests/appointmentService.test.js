@@ -1,6 +1,6 @@
 jest.mock('../src/repositories/appointmentRepository', () => ({
   findByStudentId: jest.fn(),
-  findAll: jest.fn(),
+  findByStatuses: jest.fn(),
   create: jest.fn(),
 }));
 
@@ -34,7 +34,7 @@ describe('Appointment Service', () => {
         queuePosition: null,
       },
     ]);
-    appointmentRepository.findAll.mockResolvedValue([]);
+    appointmentRepository.findByStatuses.mockResolvedValue([]);
     userService.getDefaultAdvisor.mockResolvedValue({ id: 'adm1', name: 'Admin Smith' });
   });
 
@@ -51,11 +51,12 @@ describe('Appointment Service', () => {
     );
   });
 
-  test('getAdminAppointments returns all appointments', async () => {
-    appointmentRepository.findAll.mockResolvedValue([{ id: 'apt1' }]);
+  test('getAdminAppointments returns scheduled/waiting appointments', async () => {
+    appointmentRepository.findByStatuses.mockResolvedValue([{ id: 'apt1' }]);
     const result = await appointmentService.getAdminAppointments();
 
     expect(result.length).toBe(1);
+    expect(appointmentRepository.findByStatuses).toHaveBeenCalledWith(['Scheduled', 'Waiting']);
   });
 
   test('createAppointment creates appointment for valid payload', async () => {

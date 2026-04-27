@@ -2,6 +2,7 @@ jest.mock('../src/config/db', () => {
   const sql = {
     VarChar: jest.fn(() => 'VarChar'),
     BigInt: 'BigInt',
+    DateTime: 'DateTime',
     MAX: 'MAX',
   };
   return {

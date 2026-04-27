@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 export type AppointmentStatus =
   | 'Scheduled'
+  | 'Waiting'
   | 'Checked In'
   | 'In Service'
   | 'Completed'

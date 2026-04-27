@@ -67,6 +67,7 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
 
   // Backend-driven queue data
   items = signal<QueueItem[]>([]);
+  completedToday = signal(0);
 
   // Auth mock
   isLoggedIn = signal<boolean>(true);
@@ -87,7 +88,7 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
   // Queue metrics
   waitingCount = computed(() => this.items().filter(x => x.state === 'Waiting').length);
   beingServedCount = computed(() => this.items().filter(x => x.state === 'Being Served').length);
-  completedTodayCount = computed(() => this.items().filter(x => x.state === 'Completed').length);
+  completedTodayCount = computed(() => this.completedToday());
 
   // Current serving / next waiting
   current = computed(() => {
@@ -143,8 +144,9 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
 
     this.queueApi.getCurrentQueue().subscribe({
       next: (response) => {
-        const mappedItems = response.data.map(item => this.mapApiQueueItem(item));
+        const mappedItems = response.data.queue.map(item => this.mapApiQueueItem(item));
         this.items.set(mappedItems);
+        this.completedToday.set(response.data.metrics?.completedToday ?? 0);
         this.isQueueLoading.set(false);
       },
       error: (error) => {
@@ -215,8 +217,7 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
 
   manageById(queueId: string): void {
     const s = this.items().find(x => x.id === queueId);
-    this.notices.push('info', 'Manage opened', `Managing ticket for ${s?.name ?? queueId}.`);
-    alert(`Manage clicked for ${s?.name ?? queueId}`);
+    this.notices.push('info', 'Manage unavailable', `Manage is temporarily disabled for ${s?.name ?? queueId}.`);
   }
 
   completeCurrent(): void {
@@ -332,9 +333,35 @@ export class StaffQueueManagementComponent implements OnInit, OnDestroy {
     const d = this.now();
     return d.toLocaleTimeString([], {
       hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
+      minute: '2-digit'
     });
+  }
+
+  formatDisplayDate(value: string): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}-${day}-${year}`;
+  }
+
+  formatDisplayTime(value: string): string {
+    if (!value) return '—';
+    const asDate = new Date(value);
+    if (!Number.isNaN(asDate.getTime())) {
+      return asDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    const hhmm = String(value).slice(0, 5);
+    if (/^\d{2}:\d{2}$/.test(hhmm)) {
+      const [h, m] = hhmm.split(':').map(Number);
+      const base = new Date();
+      base.setHours(h, m, 0, 0);
+      return base.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    return value;
   }
 
   // =========================
