@@ -297,29 +297,28 @@ class QueueService {
     const previousSnapshot = this.buildQueueSnapshotByUser(
       await this.getCurrentQueueWithEstimates()
     );
-    const currentlyServing = await queueRepository.findServing();
-    if (currentlyServing) {
-      throw httpError(409, 'A user is already being served.');
+    const adminUserId = typeof options.adminUserId === 'string' ? options.adminUserId.trim() : '';
+    if (!adminUserId) {
+      throw httpError(400, 'adminUserId is required.');
+    }
+    const currentlyServingByAdmin = await queueRepository.findServingByAdmin(adminUserId);
+    if (currentlyServingByAdmin) {
+      throw httpError(409, 'You already have a student in service. Complete or no-show that student first.');
     }
 
-    const nextUser = await queueRepository.findNextWaiting();
-    if (!nextUser) {
+    const updated = await queueRepository.claimNextWaitingForAdmin(adminUserId);
+    if (!updated) {
       throw httpError(404, 'No waiting users in the queue.');
     }
 
     // Notify next user (position 1) as almost ready (keeps prior logging behavior)
     try {
       const userService = require('./user.service');
-      const foundUser = await userService.findUserById(nextUser.userId);
-      notificationService.notifyAlmostReady(foundUser || { id: nextUser.userId, name: nextUser.name }, nextUser, 1);
+      const foundUser = await userService.findUserById(updated.userId);
+      notificationService.notifyAlmostReady(foundUser || { id: updated.userId, name: updated.name }, updated, 1);
     } catch (e) {
-      notificationService.notifyAlmostReady({ id: nextUser.userId, name: nextUser.name }, nextUser, 1);
+      notificationService.notifyAlmostReady({ id: updated.userId, name: updated.name }, updated, 1);
     }
-
-    const updated = await queueRepository.updateById(nextUser.id, {
-      status: 'serving',
-      ...(options.adminUserId ? { servedByAdminUserId: options.adminUserId } : {}),
-    });
 
     // Notify the served student
     try {
@@ -359,11 +358,20 @@ class QueueService {
     if (queueItem.status !== 'serving' && queueItem.status !== 'waiting') {
       throw httpError(409, 'Only waiting or serving users can be marked as no-show.');
     }
+    const adminUserId = typeof options.adminUserId === 'string' ? options.adminUserId.trim() : '';
+    if (
+      queueItem.status === 'serving' &&
+      queueItem.servedByAdminUserId &&
+      adminUserId &&
+      queueItem.servedByAdminUserId !== adminUserId
+    ) {
+      throw httpError(409, 'This user is being served by another advisor.');
+    }
 
     const updated = await queueRepository.updateById(queueId, {
       status: 'no-show',
       cancelReason: options.cancelReason || 'no_show',
-      ...(options.adminUserId ? { servedByAdminUserId: options.adminUserId } : {}),
+      ...(adminUserId ? { servedByAdminUserId: adminUserId } : {}),
     });
 
     const historyService = require('./historyService');
@@ -395,10 +403,18 @@ class QueueService {
     if (queueItem.status !== 'serving') {
       throw httpError(409, 'Only a serving user can be completed.');
     }
+    const adminUserId = typeof options.adminUserId === 'string' ? options.adminUserId.trim() : '';
+    if (
+      queueItem.servedByAdminUserId &&
+      adminUserId &&
+      queueItem.servedByAdminUserId !== adminUserId
+    ) {
+      throw httpError(409, 'This user is being served by another advisor.');
+    }
 
     const updated = await queueRepository.updateById(queueId, {
       status: 'served',
-      ...(options.adminUserId ? { servedByAdminUserId: options.adminUserId } : {}),
+      ...(adminUserId ? { servedByAdminUserId: adminUserId } : {}),
     });
 
     const historyService = require('./historyService');

@@ -64,7 +64,7 @@
       <div class="toast-main">
         <div class="toast-title">{{ t.title }}</div>
         <div class="toast-msg" *ngIf="t.message">{{ t.message }}</div>
-        <div class="toast-time">{{ t.createdAt | date:'shortTime' }}</div>
+        <div class="toast-time">{{ formatNoticeTime(t.createdAt) }}</div>
       </div>
       <button class="toast-x" (click)="dismissToast(t.id)" aria-label="Dismiss notification">✕</button>
     </div>
@@ -86,6 +86,11 @@
       <button class="tab" [class.active]="activeTab() === 'appointments'" (click)="setTab('appointments')">
         <span class="tab-icon" aria-hidden="true"></span>
         Appointments
+      </button>
+
+      <button class="tab" [class.active]="activeTab() === 'analytics'" (click)="setTab('analytics')">
+        <span class="tab-icon" aria-hidden="true"></span>
+        Analytics
       </button>
     </div>
   </div>
@@ -196,6 +201,10 @@
                   <div class="q-meta">Student ID: {{ cur.studentId }}</div>
                   <div class="q-reason">{{ cur.reason }}</div>
                   <div class="q-joined">{{ cur.joinedAgo }}</div>
+                  <div class="assignment-row" *ngIf="cur.state === 'Being Served' && cur.servedByAdminUserId">
+                    <span class="assignment-pill mine" *ngIf="isAssignedToCurrentAdmin(cur)">Assigned to you</span>
+                    <span class="assignment-pill other" *ngIf="isAssignedToAnotherAdmin(cur)">Assigned to another advisor</span>
+                  </div>
 
                   <a class="q-notes" *ngIf="cur.notes">{{ cur.notes }}</a>
                 </div>
@@ -295,6 +304,313 @@
         </section>
       </ng-container>
 
+      <ng-container *ngSwitchCase="'analytics'">
+        <section class="card hero">
+          <h1>Analytics</h1>
+          <p style="color: whitesmoke;">Operational insights and downloadable reports</p>
+        </section>
+
+        <div class="tabs-wrap">
+          <div class="tabs analytics-subtabs">
+            <button
+              class="tab"
+              [class.active]="analyticsSubTab() === 'overview'"
+              (click)="setAnalyticsSubTab('overview')"
+            >
+              Main Overview
+            </button>
+            <button
+              class="tab"
+              [class.active]="analyticsSubTab() === 'reports'"
+              (click)="setAnalyticsSubTab('reports')"
+            >
+              Reports
+            </button>
+          </div>
+        </div>
+
+        <section class="card" *ngIf="analyticsLoading()">
+          <div class="section-title">Loading analytics...</div>
+        </section>
+
+        <section class="card" *ngIf="analyticsError()">
+          <div class="section-title">Analytics Error</div>
+          <p>{{ analyticsError() }}</p>
+          <button class="btn light compact" (click)="loadAnalyticsOverview()">Retry</button>
+        </section>
+
+        <ng-container *ngIf="analyticsSubTab() === 'overview' && !analyticsLoading() && !analyticsError() && analyticsOverview() as a">
+          <section class="card controls">
+            <div class="controls-head">
+              <div class="section-title">{{ overviewHeaderLabel() }}</div>
+              <div class="controls-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <button class="btn light compact" [class.dark]="overviewRangeType() === 'day'" (click)="setOverviewRangeType('day')">Day</button>
+                <button class="btn light compact" [class.dark]="overviewRangeType() === 'month'" (click)="setOverviewRangeType('month')">Month</button>
+                <button class="btn light compact" [class.dark]="overviewRangeType() === 'ytd'" (click)="setOverviewRangeType('ytd')">Year to Date</button>
+
+                <input
+                  *ngIf="overviewRangeType() === 'day'"
+                  class="ah-input"
+                  type="date"
+                  [value]="overviewDate()"
+                  (input)="setOverviewDate($any($event.target).value)"
+                />
+                <input
+                  *ngIf="overviewRangeType() === 'month'"
+                  class="ah-input"
+                  type="month"
+                  [value]="overviewMonth()"
+                  (input)="setOverviewMonth($any($event.target).value)"
+                />
+                <input
+                  *ngIf="overviewRangeType() === 'ytd'"
+                  class="ah-input"
+                  type="number"
+                  min="2000"
+                  max="2100"
+                  [value]="overviewYear()"
+                  (input)="setOverviewYear($any($event.target).value)"
+                  style="width:110px;"
+                />
+              </div>
+            </div>
+            <div class="metrics">
+              <div class="metric">
+                <div class="m-label">Total Served</div>
+                <div class="m-value">{{ a.kpis.totalServed }}</div>
+              </div>
+              <div class="metric">
+                <div class="m-label">Avg Wait Time</div>
+                <div class="m-value">{{ a.kpis.avgWaitTimeMin | number:'1.0-1' }} min</div>
+              </div>
+              <div class="metric">
+                <div class="m-label">Busiest Service</div>
+                <div class="m-value" style="font-size:16px;">{{ a.kpis.busiestService }}</div>
+              </div>
+              <div class="metric">
+                <div class="m-label">Appointments Today</div>
+                <div class="m-value">{{ a.kpis.appointmentsToday }}</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="analytics-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
+            <div class="card" style="min-height:300px;">
+              <div class="section-title">Daily Queue Volume Trend</div>
+              <app-chart-canvas
+                [type]="'bar'"
+                [height]="230"
+                [data]="dailyQueueVolumeChartData()"
+                [options]="verticalBarOptions"
+              />
+            </div>
+
+            <div class="card" style="min-height:300px;">
+              <div class="section-title">Average Wait Time Trend</div>
+              <app-chart-canvas
+                [type]="'line'"
+                [height]="230"
+                [data]="avgWaitTrendChartData()"
+                [options]="lineChartOptions"
+              />
+            </div>
+
+            <div class="card" style="min-height:300px;">
+              <div class="section-title">Most Popular Services</div>
+              <app-chart-canvas
+                [type]="'bar'"
+                [height]="230"
+                [data]="mostPopularServicesChartData()"
+                [options]="horizontalBarOptions"
+              />
+            </div>
+
+            <div class="card" style="min-height:300px;">
+              <div class="section-title">Average Wait Time by Service</div>
+              <app-chart-canvas
+                [type]="'bar'"
+                [height]="230"
+                [data]="avgWaitByServiceChartData()"
+                [options]="verticalBarOptions"
+              />
+            </div>
+
+            <div class="card" style="min-height:300px;">
+              <div class="section-title">Advisor Workload</div>
+              <app-chart-canvas
+                [type]="'bar'"
+                [height]="230"
+                [data]="advisorWorkloadChartData()"
+                [options]="horizontalBarOptions"
+              />
+            </div>
+          </section>
+
+        </ng-container>
+
+        <section class="card" *ngIf="analyticsSubTab() === 'reports'">
+            <div class="section-title">Reports</div>
+            <div class="report-filters">
+              <label>Report Type</label>
+              <select class="ah-input" [value]="selectedReport()" (change)="onReportTypeChange($any($event.target).value)">
+                <option value="user_queue_participation">User Queue Participation History</option>
+                <option value="service_queue_activity">Service Queue Activity</option>
+                <option value="daily_queue_usage">Daily Queue Usage</option>
+                <option value="average_wait_time_analysis">Average Wait Time Analysis</option>
+              </select>
+
+              <label>Start Date</label>
+              <input class="ah-input" type="date" [value]="reportFilters().startDate" (input)="updateReportFilter('startDate', $any($event.target).value)" />
+              <label>End Date</label>
+              <input class="ah-input" type="date" [value]="reportFilters().endDate" (input)="updateReportFilter('endDate', $any($event.target).value)" />
+
+              <ng-container *ngIf="selectedReport() === 'user_queue_participation'">
+                <label>Student Name</label>
+                <input class="ah-input" [value]="reportFilters().studentName" (input)="updateReportFilter('studentName', $any($event.target).value)" placeholder="Contains match" />
+                <label>Student ID</label>
+                <input class="ah-input" [value]="reportFilters().studentId" (input)="updateReportFilter('studentId', $any($event.target).value)" placeholder="Partial match" />
+              </ng-container>
+
+              <ng-container *ngIf="selectedReport() === 'user_queue_participation' || selectedReport() === 'service_queue_activity' || selectedReport() === 'average_wait_time_analysis'">
+                <div class="report-filter-title">Service</div>
+                <div class="report-check-group">
+                  <label class="report-check-all">
+                    <input type="checkbox" [checked]="reportFilters().allServices" (change)="setReportServiceAll($any($event.target).checked)" />
+                    All services
+                  </label>
+                  <div class="report-check-list" [class.report-check-muted]="reportFilters().allServices">
+                    <label *ngFor="let s of analyticsFilters()?.services ?? []" class="report-check-item">
+                      <input type="checkbox" [disabled]="reportFilters().allServices" [checked]="reportFilters().services.includes(s)" (change)="toggleReportService(s, $any($event.target).checked)" />
+                      {{ s }}
+                    </label>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-container *ngIf="selectedReport() === 'user_queue_participation'">
+                <div class="report-filter-title">Status</div>
+                <div class="report-check-group">
+                  <label class="report-check-all">
+                    <input type="checkbox" [checked]="reportFilters().allStatuses" (change)="setReportStatusAll($any($event.target).checked)" />
+                    All statuses
+                  </label>
+                  <div class="report-check-list" [class.report-check-muted]="reportFilters().allStatuses">
+                    <label *ngFor="let s of analyticsFilters()?.queueStatuses ?? []" class="report-check-item">
+                      <input type="checkbox" [disabled]="reportFilters().allStatuses" [checked]="reportFilters().statuses.includes(s)" (change)="toggleReportStatus(s, $any($event.target).checked)" />
+                      {{ s }}
+                    </label>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-container *ngIf="selectedReport() === 'service_queue_activity' && (analyticsFilters()?.serviceActivityStatuses?.length ?? 0) > 0">
+                <div class="report-filter-title">Status</div>
+                <div class="report-check-group">
+                  <label class="report-check-all">
+                    <input type="checkbox" [checked]="reportFilters().allStatuses" (change)="setReportStatusAll($any($event.target).checked)" />
+                    All statuses
+                  </label>
+                  <div class="report-check-list" [class.report-check-muted]="reportFilters().allStatuses">
+                    <label *ngFor="let s of analyticsFilters()?.serviceActivityStatuses ?? []" class="report-check-item">
+                      <input type="checkbox" [disabled]="reportFilters().allStatuses" [checked]="reportFilters().statuses.includes(s)" (change)="toggleReportStatus(s, $any($event.target).checked)" />
+                      {{ s }}
+                    </label>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-container *ngIf="selectedReport() === 'user_queue_participation' || selectedReport() === 'service_queue_activity'">
+                <div class="report-filter-title">Entry source</div>
+                <div class="report-check-group">
+                  <label class="report-check-all">
+                    <input type="checkbox" [checked]="reportFilters().allEntrySources" (change)="setReportEntrySourceAll($any($event.target).checked)" />
+                    All entry sources
+                  </label>
+                  <div class="report-check-list" [class.report-check-muted]="reportFilters().allEntrySources">
+                    <label *ngFor="let s of analyticsFilters()?.entrySources ?? []" class="report-check-item">
+                      <input type="checkbox" [disabled]="reportFilters().allEntrySources" [checked]="reportFilters().entrySources.includes(s)" (change)="toggleReportEntrySource(s, $any($event.target).checked)" />
+                      {{ s }}
+                    </label>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-container *ngIf="selectedReport() === 'user_queue_participation'">
+                <div class="report-filter-title">Priority</div>
+                <div class="report-check-group">
+                  <label class="report-check-all">
+                    <input type="checkbox" [checked]="reportFilters().allPriorities" (change)="setReportPriorityAll($any($event.target).checked)" />
+                    All priorities
+                  </label>
+                  <div class="report-check-list" [class.report-check-muted]="reportFilters().allPriorities">
+                    <label *ngFor="let p of analyticsFilters()?.priorities ?? []" class="report-check-item">
+                      <input type="checkbox" [disabled]="reportFilters().allPriorities" [checked]="reportFilters().priorities.includes(p)" (change)="toggleReportPriority(p, $any($event.target).checked)" />
+                      {{ p }}
+                    </label>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-container *ngIf="selectedReport() === 'daily_queue_usage'">
+                <div class="report-filter-title">Day of week</div>
+                <div class="report-check-group">
+                  <label class="report-check-all">
+                    <input type="checkbox" [checked]="reportFilters().allDaysOfWeek" (change)="setReportDayOfWeekAll($any($event.target).checked)" />
+                    Any day
+                  </label>
+                  <div class="report-check-list" [class.report-check-muted]="reportFilters().allDaysOfWeek">
+                    <label *ngFor="let d of analyticsFilters()?.daysOfWeek ?? []" class="report-check-item">
+                      <input type="checkbox" [disabled]="reportFilters().allDaysOfWeek" [checked]="reportFilters().daysOfWeek.includes(d)" (change)="toggleReportDayOfWeek(d, $any($event.target).checked)" />
+                      {{ d }}
+                    </label>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-container *ngIf="selectedReport() === 'average_wait_time_analysis'">
+                <label>Group By</label>
+                <select class="ah-input" [value]="reportFilters().groupBy" (change)="updateReportFilter('groupBy', $any($event.target).value === 'day' ? 'day' : 'service')">
+                  <option value="service">Service</option>
+                  <option value="day">Day</option>
+                </select>
+              </ng-container>
+            </div>
+
+            <div class="controls-actions" style="margin-top:12px;">
+              <button class="btn dark compact" (click)="runReport()" [disabled]="reportLoading()">
+                {{ reportLoading() ? 'Generating…' : 'Generate Report' }}
+              </button>
+              <button class="btn light compact" (click)="csvDownload()" [disabled]="reportRows().length === 0">
+                Download CSV
+              </button>
+            </div>
+
+            <p *ngIf="reportError()" style="color:#b91c1c;margin-top:10px;">{{ reportError() }}</p>
+
+            <div class="report-table-wrap" *ngIf="reportRows().length > 0">
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th
+                      *ngFor="let col of reportColumnDefs()"
+                      (click)="toggleReportSort(col.key)"
+                      style="cursor:pointer;user-select:none;"
+                      [attr.aria-sort]="reportSortKey() === col.key ? (reportSortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+                    >
+                      {{ col.label }}{{ reportSortIndicator(col.key) }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of reportRows()">
+                    <td *ngFor="let col of reportColumnDefs()">{{ formatReportValue(row[col.key]) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+      </ng-container>
+
     </ng-container>
   </main>
 
@@ -329,7 +645,7 @@
           <div class="notice-text">
             <div class="notice-line">
               <span class="notice-ttl">{{ n.title }}</span>
-              <span class="notice-ts">{{ n.createdAt | date:'shortTime' }}</span>
+              <span class="notice-ts">{{ formatNoticeTime(n.createdAt) }}</span>
             </div>
             <div class="notice-msg" *ngIf="n.message">{{ n.message }}</div>
           </div>

@@ -7,6 +7,7 @@ const queueRoutes = require('./routes/queueRoutes');
 const serviceCatalogRoutes = require('./routes/serviceCatalogRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const adminAppointmentRoutes = require('./routes/adminAppointmentRoutes');
+const adminAnalyticsRoutes = require('./routes/adminAnalyticsRoutes');
 const historyRoutes = require('./routes/historyRoutes');
 const notificationsRoutes = require('./routes/notificationsRoutes');
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api/queue', queueRoutes);
 app.use('/api/services', serviceCatalogRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/admin/appointments', adminAppointmentRoutes);
+app.use('/api/admin/analytics', adminAnalyticsRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/notifications', notificationsRoutes);
 

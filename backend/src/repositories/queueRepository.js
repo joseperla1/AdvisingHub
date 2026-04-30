@@ -299,6 +299,39 @@ class QueueRepository {
     return result.recordset[0] || null;
   }
 
+  async findServingByAdmin(adminUserId) {
+    const pool = await getPool();
+    const result = await pool
+      .request()
+      .input('admin_user_code', sql.VarChar(20), String(adminUserId))
+      .query(`
+        SELECT TOP 1
+          qe.queue_entry_code AS id,
+          uc.user_code AS userId,
+          qe.display_name AS name,
+          qe.student_id AS studentId,
+          s.service_code AS serviceId,
+          qe.service_name_snapshot AS serviceName,
+          qe.priority,
+          qe.status,
+          qe.joined_at AS joinedAt,
+          qe.notes,
+          served_by.user_code AS servedByAdminUserId,
+          qe.entry_source AS entrySource,
+          qe.left_at AS leftAt,
+          qe.cancel_reason AS cancelReason,
+          qe.appointment_id AS appointmentId
+        FROM queue_entries qe
+        JOIN user_credentials uc ON uc.id = qe.user_id
+        JOIN services s ON s.id = qe.service_id
+        JOIN user_credentials served_by ON served_by.id = qe.served_by_admin_user_id
+        WHERE qe.status = 'serving'
+          AND served_by.user_code = @admin_user_code
+        ORDER BY qe.started_serving_at ASC
+      `);
+    return result.recordset[0] || null;
+  }
+
   async findNextWaiting() {
     const pool = await getPool();
     const result = await pool.request().query(`
@@ -334,6 +367,67 @@ class QueueRepository {
         qe.joined_at ASC
     `);
     return result.recordset[0] || null;
+  }
+
+  async claimNextWaitingForAdmin(adminUserId) {
+    const pool = await getPool();
+    const tx = new sql.Transaction(pool);
+    // READPAST is valid under READ COMMITTED / REPEATABLE READ (not SERIALIZABLE).
+    await tx.begin(sql.ISOLATION_LEVEL.READ_COMMITTED);
+    try {
+      const req = new sql.Request(tx);
+      req.input('admin_user_code', sql.VarChar(20), String(adminUserId));
+      const result = await req.query(`
+        ;WITH admin_ctx AS (
+          SELECT TOP 1 id AS admin_id
+          FROM user_credentials
+          WHERE user_code = @admin_user_code
+        ),
+        next_waiting AS (
+          SELECT TOP 1 qe.id
+          FROM queue_entries qe WITH (UPDLOCK, ROWLOCK, READPAST)
+          CROSS JOIN admin_ctx a
+          WHERE qe.status = 'waiting'
+            AND NOT EXISTS (
+              SELECT 1
+              FROM queue_entries qe2
+              WHERE qe2.status = 'serving'
+                AND qe2.served_by_admin_user_id = a.admin_id
+            )
+          ORDER BY
+            CASE qe.priority
+              WHEN 'high' THEN 0
+              WHEN 'medium' THEN 1
+              WHEN 'normal' THEN 2
+              WHEN 'low' THEN 3
+              ELSE 2
+            END ASC,
+            qe.joined_at ASC
+        )
+        UPDATE qe
+        SET
+          qe.status = 'serving',
+          qe.served_by_admin_user_id = a.admin_id,
+          qe.started_serving_at = CASE WHEN qe.started_serving_at IS NULL THEN GETDATE() ELSE qe.started_serving_at END,
+          qe.updated_at = GETDATE()
+        OUTPUT INSERTED.queue_entry_code AS id
+        FROM queue_entries qe
+        JOIN next_waiting nw ON nw.id = qe.id
+        CROSS JOIN admin_ctx a
+      `);
+
+      await tx.commit();
+      const claimedId = result.recordset?.[0]?.id;
+      if (!claimedId) return null;
+      return this.findById(claimedId);
+    } catch (error) {
+      try {
+        await tx.rollback();
+      } catch (_e) {
+        // ignore rollback errors
+      }
+      throw error;
+    }
   }
 
   async countCompletedToday() {

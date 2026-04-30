@@ -12,6 +12,10 @@ import {
   ServiceCatalogItem
 } from '../../../services/service-catalog-api.service';
 import { LoginService } from '../../../login/login.service';
+import {
+  formatDateMMDDYYYY,
+  formatTimeHHMM,
+} from '../../../shared/date-time-format.util';
 
 @Component({
   selector: 'app-user-appointments',
@@ -126,29 +130,10 @@ export class UserAppointmentsComponent implements OnInit {
   }
 
   formatDisplayDate(value: string): string {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${month}-${day}-${year}`;
+    return formatDateMMDDYYYY(value);
   }
 
   formatDisplayTime(value: string): string {
-    if (!value) return '—';
-    const asDate = new Date(value);
-    if (!Number.isNaN(asDate.getTime())) {
-      return asDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-
-    const hhmm = String(value).slice(0, 5);
-    if (/^\d{2}:\d{2}$/.test(hhmm)) {
-      const [h, m] = hhmm.split(':').map(Number);
-      const base = new Date();
-      base.setHours(h, m, 0, 0);
-      return base.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-
-    return value;
+    return formatTimeHHMM(value);
   }
 }
