@@ -39,5 +39,12 @@ describe('Notifications Routes', () => {
     expect(res.status).toBe(200);
     expect(notificationRepository.dismissForUser).toHaveBeenCalledWith('usr1', 'evt1');
   });
+
+  test('POST /api/notifications/:userId/:notificationId/read marks notification read', async () => {
+    notificationRepository.markReadForUser.mockResolvedValue();
+    const res = await request(app).post('/api/notifications/usr1/evt9/read');
+    expect(res.status).toBe(200);
+    expect(notificationRepository.markReadForUser).toHaveBeenCalledWith('usr1', 'evt9');
+  });
 });
 

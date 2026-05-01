@@ -67,4 +67,19 @@ describe('Queue User Routes', () => {
     expect(response.statusCode).toBe(404);
     expect(response.body.success).toBe(false);
   });
+
+  test('GET /api/queue/active returns 400 when userId is missing', async () => {
+    const response = await request(app).get('/api/queue/active');
+    expect(response.statusCode).toBe(400);
+    expect(response.body.success).toBe(false);
+  });
+
+  test('GET /api/queue/active returns active entry when userId provided', async () => {
+    queueService.getActiveQueueEntryForUser.mockResolvedValue({ id: 'qe1', status: 'waiting' });
+    const response = await request(app).get('/api/queue/active').query({ userId: 'u1' });
+    expect(response.statusCode).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.id).toBe('qe1');
+    expect(queueService.getActiveQueueEntryForUser).toHaveBeenCalledWith('u1');
+  });
 });
