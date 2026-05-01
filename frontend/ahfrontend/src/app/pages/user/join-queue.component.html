@@ -29,6 +29,17 @@
         </select>
       </div>
 
+      <!-- SMART WAIT-TIME DISPLAY -->
+      <div *ngIf="smartEstimate()" class="ah-card" style="margin-top: 16px;">
+        <p><strong>Estimated Wait:</strong> {{ smartEstimate()?.estimatedWaitMin }} minutes</p>
+        <p><strong>People Ahead:</strong> {{ smartEstimate()?.peopleAhead }}</p>
+        <p>{{ smartEstimate()?.recommendation }}</p>
+      </div>
+
+      <div *ngIf="estimateError()" class="ah-alert ah-alert--error">
+        {{ estimateError() }}
+      </div>
+
       <div class="ah-field">
         <label>Notes (optional)</label>
         <textarea formControlName="notes" rows="4" class="ah-textarea"></textarea>

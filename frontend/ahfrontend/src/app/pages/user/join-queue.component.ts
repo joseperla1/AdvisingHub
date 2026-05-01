@@ -6,6 +6,7 @@ import { UserNavComponent } from './user-nav/user-nav.component';
 import { LoginService } from '../../login/login.service';
 import { ServiceCatalogApiService, ServiceCatalogItem } from '../../services/service-catalog-api.service';
 import { UserQueueApiService } from '../../services/user-queue-api.service';
+import { HistoryService } from '../../services/history.service';
 
 @Component({
   selector: 'app-join-queue',
@@ -20,6 +21,8 @@ export class JoinQueueComponent implements OnInit {
   submitting = signal(false);
   submitError = signal<string | null>(null);
   loadError = signal<string | null>(null);
+  smartEstimate = signal<any | null>(null);
+  estimateError = signal<string | null>(null);
 
   form: FormGroup;
 
@@ -28,7 +31,8 @@ export class JoinQueueComponent implements OnInit {
     private router: Router,
     private login: LoginService,
     private catalogApi: ServiceCatalogApiService,
-    private queueApi: UserQueueApiService
+    private queueApi: UserQueueApiService,
+    private historyService: HistoryService
   ) {
     this.form = this.fb.group({
       serviceId: ['', Validators.required],
@@ -43,6 +47,22 @@ export class JoinQueueComponent implements OnInit {
         this.loadError.set(null);
       },
       error: () => this.loadError.set('Could not load services from the server.'),
+    });
+
+    this.form.get('serviceId')?.valueChanges.subscribe(serviceId => {
+      this.smartEstimate.set(null);
+      this.estimateError.set(null);
+
+      if (!serviceId) return;
+
+      this.historyService.getSmartWaitEstimate(serviceId).subscribe({
+        next: res => {
+          this.smartEstimate.set(res.data ?? null);
+        },
+        error: () => {
+          this.estimateError.set('Could not load smart wait-time estimate.');
+        },
+      });
     });
 
     const uid = this.login.getUserId();
@@ -116,6 +136,7 @@ export class JoinQueueComponent implements OnInit {
       .subscribe({
         next: () => {
           this.form.reset({ serviceId: '', notes: '' });
+          this.smartEstimate.set(null);
           this.submitting.set(false);
           void this.router.navigateByUrl('/user/status');
         },

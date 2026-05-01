@@ -125,6 +125,63 @@ class QueueService {
     });
   }
 
+  async getSmartWaitEstimate(serviceId) {
+  if (!serviceId) {
+    throw httpError(400, 'serviceId is required.');
+  }
+
+  const services = await serviceRepository.findAll();
+
+  const selectedService = services.find(
+    s => String(s.id) === String(serviceId) || String(s.serviceId) === String(serviceId)
+  );
+
+  if (!selectedService) {
+    throw httpError(404, 'Service not found.');
+  }
+
+    const currentQueue = await this.getCurrentQueueWithEstimates();
+
+    const sameServiceQueue = currentQueue.filter(
+      item =>
+        String(item.serviceId) === String(serviceId) &&
+        (item.status === 'waiting' || item.status === 'serving')
+    );
+
+    const peopleAhead = sameServiceQueue.length;
+
+    const expectedDurationMin = Number(
+  selectedService.expectedDurationMin ??
+  selectedService.expected_duration_min ??
+  20
+);
+    const safeExpectedDurationMin =
+      Number.isFinite(expectedDurationMin) && expectedDurationMin > 0
+        ? expectedDurationMin
+        : 20;
+
+    const estimatedWaitMin = peopleAhead * safeExpectedDurationMin;
+
+    let recommendation = 'This is a good time to join the queue.';
+
+    if (estimatedWaitMin === 0) {
+      recommendation = 'There is currently no wait for this service.';
+    } else if (estimatedWaitMin >= 45) {
+      recommendation = 'The wait is currently long. Consider joining later if your issue is not urgent.';
+    } else if (estimatedWaitMin >= 20) {
+      recommendation = 'The queue is moderately busy. You can join now, but expect a short wait.';
+    }
+
+    return {
+      serviceId: String(serviceId),
+      serviceName: selectedService.name || selectedService.serviceName || selectedService.service_name,
+      estimatedWaitMin,
+      peopleAhead,
+      expectedDurationMin: safeExpectedDurationMin,
+      recommendation,
+    };
+  }
+
   /** Active queue row for a user (waiting or serving), with computed position and ETA minutes. */
   async getActiveQueueEntryForUser(userId) {
     if (!userId || typeof userId !== 'string') {
@@ -311,7 +368,6 @@ class QueueService {
       throw httpError(404, 'No waiting users in the queue.');
     }
 
-    // Notify next user (position 1) as almost ready (keeps prior logging behavior)
     try {
       const userService = require('./user.service');
       const foundUser = await userService.findUserById(updated.userId);
@@ -320,7 +376,6 @@ class QueueService {
       notificationService.notifyAlmostReady({ id: updated.userId, name: updated.name }, updated, 1);
     }
 
-    // Notify the served student
     try {
       const userService = require('./user.service');
       const foundUser = await userService.findUserById(updated.userId);

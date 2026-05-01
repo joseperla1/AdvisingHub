@@ -40,6 +40,22 @@ async function getActiveQueueEntry(req, res, next) {
   }
 }
 
+async function getSmartWaitEstimate(req, res, next) {
+  try {
+    const { serviceId } = req.params;
+
+    const estimate = await queueService.getSmartWaitEstimate(serviceId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Smart wait-time estimate generated successfully.',
+      data: estimate,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function leaveQueue(req, res, next) {
   try {
     const queueItem = await queueService.leaveQueue(req.params.queueId);
@@ -58,4 +74,5 @@ module.exports = {
   joinQueue,
   leaveQueue,
   getActiveQueueEntry,
+  getSmartWaitEstimate,
 };
