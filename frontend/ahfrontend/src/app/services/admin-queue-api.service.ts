@@ -50,23 +50,23 @@ export class AdminQueueApiService {
     return this.http.get<ApiResponse<AdminQueueResponseData>>(this.baseUrl);
   }
 
-  serveNext(): Observable<ApiResponse<AdminQueueItem>> {
+  serveNext(adminUserId: string): Observable<ApiResponse<AdminQueueItem>> {
     return this.http.post<ApiResponse<AdminQueueItem>>(
       `${this.baseUrl}/serve-next`,
-      {}
+      { adminUserId }
     );
   }
-  noShow(queueId: string): Observable<ApiResponse<AdminQueueItem>> {
+  noShow(queueId: string, adminUserId: string): Observable<ApiResponse<AdminQueueItem>> {
     return this.http.post<ApiResponse<AdminQueueItem>>(
       `${this.baseUrl}/${queueId}/no-show`,
-      {}
+      { adminUserId }
     );
   } 
 
-  completeServing(queueId: string): Observable<ApiResponse<AdminQueueItem>> {
+  completeServing(queueId: string, adminUserId: string): Observable<ApiResponse<AdminQueueItem>> {
     return this.http.post<ApiResponse<AdminQueueItem>>(
       `${this.baseUrl}/${queueId}/complete`,
-      {}
+      { adminUserId }
     );
   }
 }

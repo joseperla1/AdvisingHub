@@ -5,7 +5,9 @@ jest.mock('../src/repositories/queueRepository', () => ({
   create: jest.fn(),
   updateById: jest.fn(),
   findServing: jest.fn(),
+  findServingByAdmin: jest.fn(),
   findNextWaiting: jest.fn(),
+  claimNextWaitingForAdmin: jest.fn(),
   countCompletedToday: jest.fn(),
 }));
 
@@ -120,19 +122,8 @@ describe('Queue Service', () => {
   });
 
   test('serveNextUser serves highest priority waiting user', async () => {
-    queueRepository.findServing.mockResolvedValue(null);
-    queueRepository.findNextWaiting.mockResolvedValue({
-      id: 'qe3',
-      userId: 'usr3',
-      name: 'Jordan S.',
-      studentId: '20260003',
-      serviceId: 'svc3',
-      serviceName: 'Graduation Check',
-      priority: 'high',
-      status: 'waiting',
-      joinedAt: '2026-03-24T18:10:00.000Z',
-    });
-    queueRepository.updateById.mockResolvedValue({
+    queueRepository.findServingByAdmin.mockResolvedValue(null);
+    queueRepository.claimNextWaitingForAdmin.mockResolvedValue({
       id: 'qe3',
       userId: 'usr3',
       name: 'Jordan S.',
@@ -144,25 +135,35 @@ describe('Queue Service', () => {
       joinedAt: '2026-03-24T18:10:00.000Z',
     });
 
-    const next = await queueService.serveNextUser();
+    const next = await queueService.serveNextUser({ adminUserId: 'adm1' });
     expect(next.studentId).toBe('20260003');
     expect(next.status).toBe('serving');
   });
 
-  test('serveNextUser throws if someone is already serving', async () => {
-    queueRepository.findServing.mockResolvedValue({ id: 'qe1', status: 'serving' });
-
+  test('serveNextUser throws when admin id is missing', async () => {
     await expect(queueService.serveNextUser()).rejects.toThrow(
-      'A user is already being served.'
+      'adminUserId is required.'
     );
   });
 
   test('serveNextUser throws if no waiting users exist', async () => {
-    queueRepository.findServing.mockResolvedValue(null);
-    queueRepository.findNextWaiting.mockResolvedValue(null);
+    queueRepository.findServingByAdmin.mockResolvedValue(null);
+    queueRepository.claimNextWaitingForAdmin.mockResolvedValue(null);
 
-    await expect(queueService.serveNextUser()).rejects.toThrow(
+    await expect(queueService.serveNextUser({ adminUserId: 'adm1' })).rejects.toThrow(
       'No waiting users in the queue.'
+    );
+  });
+
+  test('serveNextUser throws when advisor already has a serving ticket', async () => {
+    queueRepository.findServingByAdmin.mockResolvedValue({
+      id: 'qe100',
+      status: 'serving',
+      servedByAdminUserId: 'adm1',
+    });
+
+    await expect(queueService.serveNextUser({ adminUserId: 'adm1' })).rejects.toThrow(
+      'You already have a student in service. Complete or no-show that student first.'
     );
   });
 

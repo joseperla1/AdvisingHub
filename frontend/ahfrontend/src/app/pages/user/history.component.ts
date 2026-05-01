@@ -6,6 +6,7 @@ import {
   HistoryApiService,
   QueueHistoryEntry,
 } from '../../services/history-api.service';
+import { formatDateTimeMMDDYYYYHHMM } from '../../shared/date-time-format.util';
 
 type Outcome = 'served' | 'left' | 'canceled' | 'no_show' | 'unknown';
 type Status = 'waiting' | 'almost_ready' | 'ready' | 'served' | 'left' | 'canceled' | 'unknown';
@@ -139,13 +140,7 @@ export class HistoryComponent implements OnInit {
 
   formatDisplayDateTime(value: string | null): string {
     if (!value) return '—';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const year = date.getFullYear();
-    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    return `${month}-${day}-${year} ${time}`;
+    return formatDateTimeMMDDYYYYHHMM(value);
   }
 
   // Outcome/status no longer shown in history (UI keeps these for older template compatibility).

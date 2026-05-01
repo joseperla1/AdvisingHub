@@ -7,6 +7,10 @@ import { LoginService } from '../../../login/login.service';
 import { ServiceCatalogApiService } from '../../../services/service-catalog-api.service';
 import { UserQueueApiService } from '../../../services/user-queue-api.service';
 import { NotificationsApiService } from '../../../services/notifications-api.service';
+import {
+  formatDateMMDDYYYY,
+  formatTimeHHMM,
+} from '../../../shared/date-time-format.util';
 
 type TicketStatus = 'Waiting' | 'Almost Ready' | 'Served' | 'Left';
 
@@ -221,17 +225,12 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
   }
 
   private nowTime(): string {
-    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return formatTimeHHMM(new Date());
   }
 
   formatDisplayDate(value?: string): string {
     if (!value) return '—';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${month}-${day}-${year}`;
+    return formatDateMMDDYYYY(value);
   }
 
   private refreshNotificationsFromApi(): void {
@@ -249,7 +248,7 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
           type: 'INFO',
           message: r.message,
           createdAtIso: r.createdAt,
-          time: new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          time: formatTimeHHMM(r.createdAt),
         }));
       },
       error: () => {
