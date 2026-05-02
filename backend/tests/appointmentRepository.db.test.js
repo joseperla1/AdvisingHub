@@ -73,12 +73,16 @@ describe('AppointmentRepository (DB integration)', () => {
       advisorId: 'adm1',
       advisor: 'Admin Smith',
       appointmentDate: '2026-04-01',
-      appointmentTime: '10:00:00',
+      appointmentTime: '14:30',
       status: 'Scheduled',
       queuePosition: null,
       notes: null,
     });
     expect(req.input).toHaveBeenCalledWith('service_code', expect.anything(), 'svc1');
+    const timeArg = req.input.mock.calls.find((c) => c[0] === 'appointment_time');
+    expect(timeArg[2]).toBeInstanceOf(Date);
+    expect(timeArg[2].getHours()).toBe(14);
+    expect(timeArg[2].getMinutes()).toBe(30);
     expect(spy).toHaveBeenCalled();
     expect(row.id).toBe('apt_new');
     spy.mockRestore();

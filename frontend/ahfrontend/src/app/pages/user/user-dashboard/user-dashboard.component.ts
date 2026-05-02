@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, interval, Subscription } from 'rxjs';
 import { UserNavComponent } from '../user-nav/user-nav.component';
@@ -43,6 +44,7 @@ interface ActiveTicket {
   imports: [CommonModule, RouterLink, UserNavComponent],
   templateUrl: './user-dashboard.component.html',
   styleUrls: ['./user-dashboard.component.css'],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class UserDashboardComponent implements OnInit, OnDestroy {
   activeTicket: ActiveTicket | null = null;
