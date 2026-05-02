@@ -1,6 +1,29 @@
 const { getPool, sql } = require('../config/db');
 const { appointmentCode } = require('../utils/codeGenerator');
 
+/**
+ * Tedious `sql.Time` only accepts Date or strings Date.parse understands.
+ * Browsers send `HH:mm` from `<input type="time">`, which Date.parse rejects.
+ */
+function appointmentTimeToDate(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value;
+  }
+  const str = String(value).trim();
+  const parts = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(str);
+  if (parts) {
+    const h = Number(parts[1]);
+    const m = Number(parts[2]);
+    const s = parts[3] != null ? Number(parts[3]) : 0;
+    return new Date(1970, 0, 1, h, m, s, 0);
+  }
+  const parsed = new Date(str);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed;
+  }
+  throw new TypeError('Invalid time.');
+}
+
 class AppointmentRepository {
   async findAll() {
     const pool = await getPool();
@@ -140,7 +163,7 @@ class AppointmentRepository {
       .input('advisor_code', sql.VarChar(20), String(appointment.advisorId))
       .input('advisor_name_snapshot', sql.VarChar(100), String(appointment.advisor))
       .input('appointment_date', sql.Date, appointment.appointmentDate)
-      .input('appointment_time', sql.Time, appointment.appointmentTime)
+      .input('appointment_time', sql.Time, appointmentTimeToDate(appointment.appointmentTime))
       .input('status', sql.VarChar(20), appointment.status || 'Scheduled')
       .input('queue_position', sql.Int, appointment.queuePosition ?? null)
       .input('notes', sql.VarChar(500), appointment.notes || null)
