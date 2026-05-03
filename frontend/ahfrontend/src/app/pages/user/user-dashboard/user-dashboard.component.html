@@ -181,44 +181,6 @@
     </div>
   </div>
 
-  <!-- ===== NEXT STEPS / QUICK ACTION CARD ===== -->
-  <div class="ah-card quick-action" *ngIf="activeTicket; else joinTip" style="margin-top:14px;">
-  <div class="ah-card-header">
-    <h2>Next Steps</h2>
-  </div>
-  <p>
-    Your turn is coming up! Check your queue status or prepare required documents.
-  </p>
-  <div class="ah-row-actions">
-    <button class="ah-btn primary" routerLink="/user/status">
-      View Status
-    </button>
-    <!-- Quick Links -->
-    <button class="ah-btn ghost" (click)="messageAdmin()">
-      Message Admin
-    </button>
-    <button class="ah-btn ghost" (click)="viewServiceInfo(activeTicket.serviceName)">
-      View Service Info
-    </button>
-  </div>
-</div>
-
-<ng-template #joinTip>
-  <div class="ah-card quick-action" style="margin-top:14px;">
-    <div class="ah-card-header">
-      <h2>Next Steps</h2>
-    </div>
-    <p>
-      You have no active ticket. Join a service now to start tracking your spot in line!
-    </p>
-    <div class="ah-row-actions">
-      <button class="ah-btn primary" routerLink="/user/join">
-        Join Queue
-      </button>
-    </div>
-  </div>
-</ng-template>
-
   <!-- SERVICES -->
   <div class="ah-card" style="margin-top:14px;">
     <div class="ah-card-header">
@@ -264,5 +226,13 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Student chatbot launcher (bottom area of dashboard) -->
+  <div style="margin-top:14px; display:flex; justify-content:flex-end;">
+    <zapier-interfaces-chatbot-embed
+      is-popup="true"
+      chatbot-id="cmomajbuq002ku7mvi63cng4d"
+    ></zapier-interfaces-chatbot-embed>
   </div>
 </div>
