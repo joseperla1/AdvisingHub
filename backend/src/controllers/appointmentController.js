@@ -40,8 +40,36 @@ async function getAdminAppointments(req, res, next) {
   }
 }
 
+async function updateAppointmentForStudent(req, res, next) {
+  try {
+    const appointment = await appointmentService.updateAppointmentForStudent(req.params.id, req.body);
+    res.status(200).json({
+      success: true,
+      message: 'Appointment updated successfully.',
+      data: appointment,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function cancelAppointmentForStudent(req, res, next) {
+  try {
+    const appointment = await appointmentService.cancelAppointmentForStudent(req.params.id, req.body);
+    res.status(200).json({
+      success: true,
+      message: 'Appointment canceled successfully.',
+      data: appointment,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   createAppointment,
   getAppointmentsForStudent,
-  getAdminAppointments
+  getAdminAppointments,
+  updateAppointmentForStudent,
+  cancelAppointmentForStudent,
 };

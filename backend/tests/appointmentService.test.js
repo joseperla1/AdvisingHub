@@ -1,7 +1,10 @@
 jest.mock('../src/repositories/appointmentRepository', () => ({
   findByStudentId: jest.fn(),
   findByStatuses: jest.fn(),
+  findById: jest.fn(),
   create: jest.fn(),
+  updateForStudent: jest.fn(),
+  cancelForStudent: jest.fn(),
 }));
 
 jest.mock('../src/repositories/serviceRepository', () => ({
@@ -18,6 +21,15 @@ const userService = require('../src/services/user.service');
 const appointmentService = require('../src/services/appointmentService');
 
 describe('Appointment Service', () => {
+  const futureDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     appointmentRepository.findByStudentId.mockResolvedValue([
@@ -35,6 +47,21 @@ describe('Appointment Service', () => {
       },
     ]);
     appointmentRepository.findByStatuses.mockResolvedValue([]);
+    appointmentRepository.findById.mockResolvedValue({
+      id: 'apt-existing',
+      studentId: '20260777',
+      status: 'Scheduled',
+    });
+    appointmentRepository.updateForStudent.mockResolvedValue({
+      id: 'apt-existing',
+      studentId: '20260777',
+      status: 'Scheduled',
+    });
+    appointmentRepository.cancelForStudent.mockResolvedValue({
+      id: 'apt-existing',
+      studentId: '20260777',
+      status: 'Canceled',
+    });
     userService.getDefaultAdvisor.mockResolvedValue({ id: 'adm1', name: 'Admin Smith' });
   });
 
@@ -66,7 +93,7 @@ describe('Appointment Service', () => {
       studentName: 'Jose Student',
       studentId: '20260777',
       serviceId: 'svc2',
-      appointmentDate: '2026-03-30',
+      appointmentDate: futureDate(),
       appointmentTime: '10:00',
       notes: 'Check degree plan'
     });
@@ -95,9 +122,44 @@ describe('Appointment Service', () => {
         studentName: 'Jose Student',
         studentId: '20260777',
         serviceId: 'missing-service',
-        appointmentDate: '2026-03-30',
+        appointmentDate: futureDate(),
         appointmentTime: '10:00'
       })
     ).rejects.toThrow('Selected service not found.');
+  });
+
+  test('createAppointment rejects appointments in the past', async () => {
+    await expect(
+      appointmentService.createAppointment({
+        studentName: 'Jose Student',
+        studentId: '20260777',
+        serviceId: 'svc2',
+        appointmentDate: '2000-01-01',
+        appointmentTime: '10:00',
+      })
+    ).rejects.toThrow('Appointments cannot be scheduled in the past.');
+  });
+
+  test('updateAppointmentForStudent updates when allowed', async () => {
+    serviceRepository.findById.mockResolvedValue({ id: 'svc2', name: 'Graduation Check' });
+
+    const updated = await appointmentService.updateAppointmentForStudent('apt-existing', {
+      studentId: '20260777',
+      serviceId: 'svc2',
+      appointmentDate: futureDate(),
+      appointmentTime: '13:15',
+      notes: 'Updated notes',
+    });
+
+    expect(updated.id).toBe('apt-existing');
+    expect(appointmentRepository.updateForStudent).toHaveBeenCalled();
+  });
+
+  test('cancelAppointmentForStudent cancels when allowed', async () => {
+    const canceled = await appointmentService.cancelAppointmentForStudent('apt-existing', {
+      studentId: '20260777',
+    });
+    expect(canceled.status).toBe('Canceled');
+    expect(appointmentRepository.cancelForStudent).toHaveBeenCalledWith('apt-existing', '20260777');
   });
 });

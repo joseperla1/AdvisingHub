@@ -198,6 +198,54 @@ class AppointmentRepository {
 
     return this.findById(code);
   }
+
+  async updateForStudent(id, studentId, updates) {
+    const pool = await getPool();
+
+    await pool
+      .request()
+      .input('appointment_code', sql.VarChar(20), String(id))
+      .input('student_id', sql.VarChar(20), String(studentId))
+      .input('service_code', sql.VarChar(20), String(updates.serviceId))
+      .input('service_name_snapshot', sql.VarChar(100), String(updates.serviceName))
+      .input('appointment_date', sql.Date, updates.appointmentDate)
+      .input('appointment_time_text', sql.VarChar(8), appointmentTimeToSqlString(updates.appointmentTime))
+      .input('notes', sql.VarChar(500), updates.notes || null)
+      .query(`
+        UPDATE a
+        SET
+          service_id = (SELECT TOP 1 id FROM services WHERE service_code = @service_code),
+          service_name_snapshot = @service_name_snapshot,
+          appointment_date = @appointment_date,
+          appointment_time = CAST(@appointment_time_text AS time),
+          notes = @notes
+        FROM appointments a
+        WHERE a.appointment_code = @appointment_code
+          AND a.student_id = @student_id
+          AND a.status IN ('Scheduled', 'Checked In')
+      `);
+
+    return this.findById(id);
+  }
+
+  async cancelForStudent(id, studentId) {
+    const pool = await getPool();
+    await pool
+      .request()
+      .input('appointment_code', sql.VarChar(20), String(id))
+      .input('student_id', sql.VarChar(20), String(studentId))
+      .query(`
+        UPDATE a
+        SET
+          status = 'Canceled',
+          queue_position = NULL
+        FROM appointments a
+        WHERE a.appointment_code = @appointment_code
+          AND a.student_id = @student_id
+          AND a.status IN ('Scheduled', 'Checked In')
+      `);
+    return this.findById(id);
+  }
 }
 
 module.exports = new AppointmentRepository();

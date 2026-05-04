@@ -4,6 +4,8 @@ jest.mock('../src/services/appointmentService', () => ({
   createAppointment: jest.fn(),
   getAppointmentsForStudent: jest.fn(),
   getAdminAppointments: jest.fn(),
+  updateAppointmentForStudent: jest.fn(),
+  cancelAppointmentForStudent: jest.fn(),
 }));
 const appointmentService = require('../src/services/appointmentService');
 
@@ -64,5 +66,31 @@ describe('Appointment Routes', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body.success).toBe(true);
     expect(response.body.data.length).toBe(1);
+  });
+
+  test('PUT /api/appointments/:id updates appointment', async () => {
+    appointmentService.updateAppointmentForStudent.mockResolvedValue({ id: 'apt1', status: 'Scheduled' });
+    const response = await request(app)
+      .put('/api/appointments/apt1')
+      .send({
+        studentId: 'STU002',
+        serviceId: 'svc1',
+        appointmentDate: '2099-01-01',
+        appointmentTime: '11:11',
+      });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.success).toBe(true);
+  });
+
+  test('POST /api/appointments/:id/cancel cancels appointment', async () => {
+    appointmentService.cancelAppointmentForStudent.mockResolvedValue({ id: 'apt1', status: 'Canceled' });
+    const response = await request(app)
+      .post('/api/appointments/apt1/cancel')
+      .send({ studentId: 'STU002' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.status).toBe('Canceled');
   });
 });

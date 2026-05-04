@@ -30,6 +30,42 @@ function validateCreateAppointmentPayload(body) {
   return errors;
 }
 
+function validateUpdateAppointmentPayload(body) {
+  const errors = [];
+
+  if (!body.studentId || typeof body.studentId !== 'string') {
+    errors.push('studentId is required.');
+  }
+
+  if (!body.serviceId || typeof body.serviceId !== 'string') {
+    errors.push('serviceId is required.');
+  }
+
+  if (!body.appointmentDate || typeof body.appointmentDate !== 'string') {
+    errors.push('appointmentDate is required.');
+  }
+
+  if (!body.appointmentTime || typeof body.appointmentTime !== 'string') {
+    errors.push('appointmentTime is required.');
+  }
+
+  if (body.notes !== undefined && typeof body.notes !== 'string') {
+    errors.push('notes must be a string.');
+  }
+
+  return errors;
+}
+
+function validateCancelAppointmentPayload(body) {
+  const errors = [];
+  if (!body.studentId || typeof body.studentId !== 'string') {
+    errors.push('studentId is required.');
+  }
+  return errors;
+}
+
 module.exports = {
-  validateCreateAppointmentPayload
+  validateCreateAppointmentPayload,
+  validateUpdateAppointmentPayload,
+  validateCancelAppointmentPayload,
 };

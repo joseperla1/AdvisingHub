@@ -36,6 +36,14 @@ export interface CreateAppointmentPayload {
   notes?: string;
 }
 
+export interface UpdateAppointmentPayload {
+  studentId: string;
+  serviceId: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  notes?: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message?: string;
@@ -61,5 +69,13 @@ export class AppointmentsApiService {
 
   getAdminAppointments(): Observable<ApiResponse<AppointmentItem[]>> {
     return this.http.get<ApiResponse<AppointmentItem[]>>(this.adminBaseUrl);
+  }
+
+  updateAppointment(appointmentId: string, payload: UpdateAppointmentPayload): Observable<ApiResponse<AppointmentItem>> {
+    return this.http.put<ApiResponse<AppointmentItem>>(`${this.baseUrl}/${appointmentId}`, payload);
+  }
+
+  cancelAppointment(appointmentId: string, studentId: string): Observable<ApiResponse<AppointmentItem>> {
+    return this.http.post<ApiResponse<AppointmentItem>>(`${this.baseUrl}/${appointmentId}/cancel`, { studentId });
   }
 }

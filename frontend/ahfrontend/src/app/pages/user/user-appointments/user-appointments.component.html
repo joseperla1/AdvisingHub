@@ -29,7 +29,7 @@
         </div>
 
         <label class="ah-label">Appointment Date</label>
-        <input class="ah-input" type="date" [(ngModel)]="form.appointmentDate" name="appointmentDate" />
+        <input class="ah-input" type="date" [min]="minDate()" [(ngModel)]="form.appointmentDate" name="appointmentDate" />
 
         <label class="ah-label">Appointment Time</label>
         <input class="ah-input" type="time" [(ngModel)]="form.appointmentTime" name="appointmentTime" />
@@ -58,22 +58,24 @@
     <div class="ah-card">
       <div class="ah-card-header">
         <h2>Current Appointments</h2>
-        <small>{{ appointments().length }} total</small>
+        <small>{{ currentAppointments().length }} current</small>
       </div>
 
-      <div *ngIf="appointments().length === 0" class="ah-help">
+      <div *ngIf="currentAppointments().length === 0" class="ah-help">
         No appointments scheduled.
       </div>
 
-      <div class="ah-grid" *ngIf="appointments().length > 0">
-        <div class="ah-row" *ngFor="let a of appointments()">
+      <div class="ah-grid" *ngIf="currentAppointments().length > 0">
+        <div class="ah-row" *ngFor="let a of currentAppointments()">
           <div class="ah-row-top">
             <div>
               <h3>{{ a.serviceName }}</h3>
-              <p><b>Date:</b> {{ formatDisplayDate(a.appointmentDate) }}</p>
-              <p><b>Time:</b> {{ formatDisplayTime(a.appointmentTime) }}</p>
-              <p><b>Advisor:</b> {{ a.advisor }}</p>
-              <p><b>Queue Position:</b> {{ a.queuePosition ?? '—' }}</p>
+              <ng-container *ngIf="!isEditing(a.id); else editBlock">
+                <p><b>Date:</b> {{ formatDisplayDate(a.appointmentDate) }}</p>
+                <p><b>Time:</b> {{ formatDisplayTime(a.appointmentTime) }}</p>
+                <p><b>Advisor:</b> {{ a.advisor }}</p>
+                <p><b>Queue Position:</b> {{ a.queuePosition ?? '—' }}</p>
+              </ng-container>
             </div>
 
             <span class="ah-badge" [ngClass]="badgeClass(a.status)">
@@ -81,7 +83,39 @@
             </span>
           </div>
 
-          <p *ngIf="a.notes"><b>Notes:</b> {{ a.notes }}</p>
+          <ng-template #editBlock>
+            <div class="ah-form-grid" style="margin-top: 8px;">
+              <label class="ah-label">Service</label>
+              <select class="ah-input" [(ngModel)]="editForm.serviceId" [name]="'editService' + a.id">
+                <option value="">Select a service</option>
+                <option *ngFor="let s of services()" [value]="s.id">{{ s.name }}</option>
+              </select>
+
+              <label class="ah-label">Appointment Date</label>
+              <input class="ah-input" type="date" [min]="minDate()" [(ngModel)]="editForm.appointmentDate" [name]="'editDate' + a.id" />
+
+              <label class="ah-label">Appointment Time</label>
+              <input class="ah-input" type="time" [(ngModel)]="editForm.appointmentTime" [name]="'editTime' + a.id" />
+
+              <label class="ah-label">Notes</label>
+              <textarea class="ah-input" rows="3" [(ngModel)]="editForm.notes" [name]="'editNotes' + a.id"></textarea>
+            </div>
+          </ng-template>
+
+          <p *ngIf="a.notes && !isEditing(a.id)"><b>Notes:</b> {{ a.notes }}</p>
+
+          <div class="ah-row-actions">
+            <ng-container *ngIf="!isEditing(a.id); else editingActions">
+              <button class="ah-btn ghost" (click)="startEdit(a)" [disabled]="isLoading()">Edit</button>
+              <button class="ah-btn red" (click)="cancelAppointment(a.id)" [disabled]="isLoading()">Cancel</button>
+            </ng-container>
+            <ng-template #editingActions>
+              <button class="ah-btn primary" (click)="saveEdit(a.id)" [disabled]="isLoading()">
+                {{ isLoading() ? 'Saving...' : 'Save' }}
+              </button>
+              <button class="ah-btn ghost" (click)="cancelEdit()" [disabled]="isLoading()">Discard</button>
+            </ng-template>
+          </div>
         </div>
       </div>
     </div>

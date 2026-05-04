@@ -1,5 +1,9 @@
 
-const { validateCreateAppointmentPayload } = require('../src/validators/appointmentValidators');
+const {
+  validateCreateAppointmentPayload,
+  validateUpdateAppointmentPayload,
+  validateCancelAppointmentPayload,
+} = require('../src/validators/appointmentValidators');
 
 describe('Appointment Validators', () => {
   test('returns no errors for valid payload', () => {
@@ -93,5 +97,18 @@ describe('Appointment Validators', () => {
     });
 
     expect(errors).toContain('notes must be a string.');
+  });
+
+  test('update validator requires studentId/service/date/time', () => {
+    const errors = validateUpdateAppointmentPayload({});
+    expect(errors).toContain('studentId is required.');
+    expect(errors).toContain('serviceId is required.');
+    expect(errors).toContain('appointmentDate is required.');
+    expect(errors).toContain('appointmentTime is required.');
+  });
+
+  test('cancel validator requires studentId', () => {
+    const errors = validateCancelAppointmentPayload({});
+    expect(errors).toContain('studentId is required.');
   });
 });
