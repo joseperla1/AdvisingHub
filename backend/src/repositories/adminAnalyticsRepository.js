@@ -44,6 +44,16 @@ function sanitizeSort(sortBy, fallback) {
   return sortBy.replace(/[^a-zA-Z0-9_,.\s]/g, '');
 }
 
+function parseLocalDateOnly(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || '').trim());
+  if (!match) return null;
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const parsed = new Date(year, monthIndex, day);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 function resolveRange(rangeType, date, month, year) {
   const now = new Date();
   const safeYear = Number(year) || now.getFullYear();
@@ -65,7 +75,7 @@ function resolveRange(rangeType, date, month, year) {
     };
   }
 
-  const selected = date ? new Date(String(date)) : now;
+  const selected = date ? (parseLocalDateOnly(date) || new Date(String(date))) : now;
   const day = Number.isNaN(selected.getTime()) ? now : selected;
   return {
     startDate: new Date(day.getFullYear(), day.getMonth(), day.getDate()),

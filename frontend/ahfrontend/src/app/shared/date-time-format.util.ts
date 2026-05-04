@@ -2,7 +2,20 @@ function toDate(value: unknown): Date | null {
   if (value instanceof Date) {
     return Number.isNaN(value.getTime()) ? null : value;
   }
-  if (typeof value === 'string' || typeof value === 'number') {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+    if (dateOnly) {
+      const year = Number(dateOnly[1]);
+      const monthIndex = Number(dateOnly[2]) - 1;
+      const day = Number(dateOnly[3]);
+      const d = new Date(year, monthIndex, day);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+    const d = new Date(trimmed);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof value === 'number') {
     const d = new Date(value);
     return Number.isNaN(d.getTime()) ? null : d;
   }
