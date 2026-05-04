@@ -1,27 +1,22 @@
 const { getPool, sql } = require('../config/db');
 const { appointmentCode } = require('../utils/codeGenerator');
 
-/**
- * Tedious `sql.Time` only accepts Date or strings Date.parse understands.
- * Browsers send `HH:mm` from `<input type="time">`, which Date.parse rejects.
- */
-function appointmentTimeToDate(value) {
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return value;
-  }
+function appointmentTimeToSqlString(value) {
   const str = String(value).trim();
   const parts = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(str);
-  if (parts) {
-    const h = Number(parts[1]);
-    const m = Number(parts[2]);
-    const s = parts[3] != null ? Number(parts[3]) : 0;
-    return new Date(1970, 0, 1, h, m, s, 0);
+  if (!parts) {
+    throw new TypeError('Invalid time.');
   }
-  const parsed = new Date(str);
-  if (!Number.isNaN(parsed.getTime())) {
-    return parsed;
+  const h = Number(parts[1]);
+  const m = Number(parts[2]);
+  const s = parts[3] != null ? Number(parts[3]) : 0;
+  if (
+    !Number.isInteger(h) || !Number.isInteger(m) || !Number.isInteger(s) ||
+    h < 0 || h > 23 || m < 0 || m > 59 || s < 0 || s > 59
+  ) {
+    throw new TypeError('Invalid time.');
   }
-  throw new TypeError('Invalid time.');
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 class AppointmentRepository {
@@ -38,7 +33,7 @@ class AppointmentRepository {
         adv.user_code AS advisorId,
         a.advisor_name_snapshot AS advisor,
         CONVERT(varchar(10), a.appointment_date, 23) AS appointmentDate,
-        a.appointment_time AS appointmentTime,
+        CONVERT(varchar(8), a.appointment_time, 108) AS appointmentTime,
         a.status,
         a.queue_position AS queuePosition,
         a.notes
@@ -74,7 +69,7 @@ class AppointmentRepository {
         adv.user_code AS advisorId,
         a.advisor_name_snapshot AS advisor,
         CONVERT(varchar(10), a.appointment_date, 23) AS appointmentDate,
-        a.appointment_time AS appointmentTime,
+        CONVERT(varchar(8), a.appointment_time, 108) AS appointmentTime,
         a.status,
         a.queue_position AS queuePosition,
         a.notes
@@ -104,7 +99,7 @@ class AppointmentRepository {
           adv.user_code AS advisorId,
           a.advisor_name_snapshot AS advisor,
           CONVERT(varchar(10), a.appointment_date, 23) AS appointmentDate,
-          a.appointment_time AS appointmentTime,
+          CONVERT(varchar(8), a.appointment_time, 108) AS appointmentTime,
           a.status,
           a.queue_position AS queuePosition,
           a.notes
@@ -133,7 +128,7 @@ class AppointmentRepository {
           adv.user_code AS advisorId,
           a.advisor_name_snapshot AS advisor,
           CONVERT(varchar(10), a.appointment_date, 23) AS appointmentDate,
-          a.appointment_time AS appointmentTime,
+          CONVERT(varchar(8), a.appointment_time, 108) AS appointmentTime,
           a.status,
           a.queue_position AS queuePosition,
           a.notes
@@ -163,7 +158,7 @@ class AppointmentRepository {
       .input('advisor_code', sql.VarChar(20), String(appointment.advisorId))
       .input('advisor_name_snapshot', sql.VarChar(100), String(appointment.advisor))
       .input('appointment_date', sql.Date, appointment.appointmentDate)
-      .input('appointment_time', sql.Time, appointmentTimeToDate(appointment.appointmentTime))
+      .input('appointment_time_text', sql.VarChar(8), appointmentTimeToSqlString(appointment.appointmentTime))
       .input('status', sql.VarChar(20), appointment.status || 'Scheduled')
       .input('queue_position', sql.Int, appointment.queuePosition ?? null)
       .input('notes', sql.VarChar(500), appointment.notes || null)
@@ -194,7 +189,7 @@ class AppointmentRepository {
           (SELECT TOP 1 id FROM user_credentials WHERE user_code = @advisor_code),
           @advisor_name_snapshot,
           @appointment_date,
-          @appointment_time,
+          CAST(@appointment_time_text AS time),
           @status,
           @queue_position,
           @notes

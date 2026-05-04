@@ -248,7 +248,7 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
         this.notifications = rows.slice(0, 25).map(r => ({
           id: r.id,
           type: 'INFO',
-          message: r.message,
+          message: this.formatNotificationMessage(r.message),
           createdAtIso: r.createdAt,
           time: formatTimeHHMM(r.createdAt),
         }));
@@ -257,6 +257,17 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
         this.notifications = [];
       },
     });
+  }
+
+  private formatNotificationMessage(message: string): string {
+    if (!message) return message;
+    return message.replace(
+      /\b(\d{1,2}:\d{2})(?::\d{2}(?:\.\d+)?)?(?!\s?(?:AM|PM)\b)/gi,
+      (matched) => {
+        const formatted = formatTimeHHMM(matched);
+        return formatted === '—' ? matched : formatted;
+      }
+    );
   }
 
   copyTicketId(): void {

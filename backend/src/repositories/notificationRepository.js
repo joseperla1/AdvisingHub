@@ -207,7 +207,11 @@ async function ensureTodayAppointmentReminders(userId) {
         a.id AS appointment_id,
         CONCAT(
           'Reminder: You have an appointment today at ',
-          LEFT(CONVERT(VARCHAR(8), a.appointment_time, 108), 5),
+          RIGHT('0' + CAST(((DATEPART(HOUR, a.appointment_time) + 11) % 12) + 1 AS VARCHAR(2)), 2),
+          ':',
+          RIGHT('0' + CAST(DATEPART(MINUTE, a.appointment_time) AS VARCHAR(2)), 2),
+          ' ',
+          CASE WHEN DATEPART(HOUR, a.appointment_time) >= 12 THEN 'PM' ELSE 'AM' END,
           ' for ',
           a.service_name_snapshot,
           '.'

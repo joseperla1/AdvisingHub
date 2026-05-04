@@ -34,13 +34,23 @@ export function formatDateMMDDYYYY(value: unknown): string {
 export function formatTimeHHMM(value: unknown): string {
   if (value == null || value === '') return '—';
   if (typeof value === 'string' && /^\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(value)) {
+    const [hourRaw, minuteRaw] = value.split(':');
+    const hour24 = Number(hourRaw);
+    const minute = Number(minuteRaw);
+    if (!Number.isNaN(hour24) && !Number.isNaN(minute)) {
+      const suffix = hour24 >= 12 ? 'PM' : 'AM';
+      const hour12 = hour24 % 12 || 12;
+      return `${hour12}:${String(minute).padStart(2, '0')} ${suffix}`;
+    }
     return value.slice(0, 5);
   }
   const d = toDate(value);
   if (!d) return String(value);
-  const hour = String(d.getHours()).padStart(2, '0');
-  const minute = String(d.getMinutes()).padStart(2, '0');
-  return `${hour}:${minute}`;
+  const hour24 = d.getHours();
+  const minute = d.getMinutes();
+  const suffix = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = hour24 % 12 || 12;
+  return `${hour12}:${String(minute).padStart(2, '0')} ${suffix}`;
 }
 
 export function formatDateTimeMMDDYYYYHHMM(value: unknown): string {

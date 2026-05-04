@@ -79,10 +79,8 @@ describe('AppointmentRepository (DB integration)', () => {
       notes: null,
     });
     expect(req.input).toHaveBeenCalledWith('service_code', expect.anything(), 'svc1');
-    const timeArg = req.input.mock.calls.find((c) => c[0] === 'appointment_time');
-    expect(timeArg[2]).toBeInstanceOf(Date);
-    expect(timeArg[2].getHours()).toBe(14);
-    expect(timeArg[2].getMinutes()).toBe(30);
+    const timeArg = req.input.mock.calls.find((c) => c[0] === 'appointment_time_text');
+    expect(timeArg[2]).toBe('14:30:00');
     expect(spy).toHaveBeenCalled();
     expect(row.id).toBe('apt_new');
     spy.mockRestore();
